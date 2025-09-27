@@ -1,0 +1,7 @@
+- [x] vdb import
+- [x] create volume material + colormap
+- [ ] histogram of volume data
+- [ ] add latex text labels
+- [ ] add arrows
+- [ ] add box 
+- [ ] import xyz fields to build fieldlines + seed points
