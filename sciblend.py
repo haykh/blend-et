@@ -531,6 +531,34 @@ def _clear_histogram_on_material(mat: bpy.types.Material):
     mat.volume_hist_ready = False
 
 
+def _create_volume_object(context, store_path, abspath):
+    scene = context.scene
+    display_name = bpy.path.display_name_from_filepath(abspath)
+    base_name = f"{display_name}_Volume"
+
+    vol_data = bpy.data.volumes.new(name=base_name)
+    vol_data.filepath = store_path
+
+    vol_obj = bpy.data.objects.new(base_name, vol_data)
+    collection = context.collection or context.scene.collection
+    collection.objects.link(vol_obj)
+    vol_obj.location = scene.cursor.location
+    vol_obj.scale = (0.01, 0.01, 0.01)
+
+    active_obj = vol_obj
+    bpy.ops.object.select_all(action="DESELECT")
+    active_obj.select_set(True)
+    context.view_layer.objects.active = active_obj
+
+    mat = _create_or_reset_volume_material(f"{display_name}_Material")
+    if len(vol_obj.data.materials) == 0:
+        vol_obj.data.materials.append(mat)
+    else:
+        vol_obj.data.materials[0] = mat
+
+    return base_name, display_name, mat
+
+
 # -----------------------------
 # Callbacks
 # -----------------------------
@@ -552,12 +580,17 @@ def _on_material_colormap_change(self, context):
     return None
 
 
+def rel_to_abs(sp_name):
+    if bpy.context.scene.my_tool[sp_name].startswith("//"):
+        abs_path = os.path.abspath(bpy.path.abspath(bpy.context.scene.my_tool[sp_name]))
+        bpy.context.scene.my_tool[sp_name] = abs_path
+
+
 # -----------------------------
 # Properties
 # -----------------------------
-class SciBlend_Props(bpy.types.PropertyGroup):
-    # tools props
-    tools_background_color: bpy.props.FloatVectorProperty(
+class SciBlend_Tools_Props(bpy.types.PropertyGroup):
+    background_color: bpy.props.FloatVectorProperty(
         name="Background color",
         description="Background color for the scene",
         subtype="COLOR",
@@ -566,28 +599,166 @@ class SciBlend_Props(bpy.types.PropertyGroup):
         max=1.0,
         size=3,
     )
-    # volume rendering props
-    volume_render_vdb_path: bpy.props.StringProperty(
+
+
+class SciBlend_Latex_Props(bpy.types.PropertyGroup):
+    latex_code: bpy.props.StringProperty(
+        name="LaTeX Code",
+        description="Enter LaTeX Code",
+        default="",
+    )
+
+    custom_latex_path: bpy.props.StringProperty(
+        name="latex",
+        description="""
+        Enter the path of the folder containing the latex command
+        on your computer. If you are not sure where the latex command is
+        located, open your terminal/command prompt and type: \"where latex\" """,
+        default="",
+        update=lambda s, c: rel_to_abs("custom_latex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_pdflatex_path: bpy.props.StringProperty(
+        name="pdflatex",
+        description="""
+        Enter the path of the folder containing the pdflatex command
+        on your computer. If you are not sure where the pdflatex command is
+        located, open your terminal/command prompt and type: \"where pdflatex\" """,
+        default="",
+        update=lambda s, c: rel_to_abs("custom_pdflatex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_xelatex_path: bpy.props.StringProperty(
+        name="xelatex",
+        description="""
+        Enter the path of the folder containing the xelatex command
+        on your computer. If you are not sure where the xelatex command is
+        located, open your terminal/command prompt and type: \"where xelatex\" """,
+        default="",
+        update=lambda s, c: rel_to_abs("custom_xelatex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_lualatex_path: bpy.props.StringProperty(
+        name="lualatex",
+        description="""
+        Enter the path of the folder containing the lualatex command
+        on your computer. If you are not sure where the lualatex command is
+        located, open your terminal/command prompt and type: \"where lualatex\" """,
+        default="",
+        update=lambda s, c: rel_to_abs("custom_lualatex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_dvisvgm_path: bpy.props.StringProperty(
+        name="dvisvgm",
+        description="""
+        Enter the path of the folder containing the dvisvgm command
+        on your computer. If you are not sure where the dvisvgm command is
+        located, open your terminal/command prompt and type: \"where dvisvgm\" """,
+        default="",
+        update=lambda s, c: rel_to_abs("custom_dvisvgm_path"),
+        subtype="DIR_PATH",
+    )
+
+    command_selection: bpy.props.EnumProperty(
+        name="Command",
+        description="Select the command used to compile LaTeX code",
+        items=[
+            ("latex", "latex", "Use latex command to compile code"),
+            ("pdflatex", "pdflatex", "Use pdflatex command to compile code"),
+            ("xelatex", "xelatex", "Use xelatex command to compile code"),
+            ("lualatex", "lualatex", "Use lualatex command to compile code"),
+        ],
+    )
+
+    text_scale: bpy.props.FloatProperty(
+        name="Scale",
+        description="Set size of text",
+        default=1.0,
+    )
+
+    x_loc: bpy.props.FloatProperty(
+        name="X",
+        description="Set x position",
+        default=0.0,
+    )
+
+    y_loc: bpy.props.FloatProperty(
+        name="Y",
+        description="Set y position",
+        default=0.0,
+    )
+
+    z_loc: bpy.props.FloatProperty(
+        name="Z",
+        description="Set z position",
+        default=0.0,
+    )
+
+    x_rot: bpy.props.FloatProperty(
+        name="X",
+        description="Set x rotation",
+        default=0.0,
+    )
+
+    y_rot: bpy.props.FloatProperty(
+        name="Y",
+        description="Set y rotation",
+        default=0.0,
+    )
+
+    z_rot: bpy.props.FloatProperty(
+        name="Z",
+        description="Set z rotation",
+        default=0.0,
+    )
+
+    custom_material_bool: bpy.props.BoolProperty(
+        name="Use Custom Material", description="Use a custom material", default=False
+    )
+
+    custom_material_value: bpy.props.PointerProperty(
+        type=bpy.types.Material, name="Material", description="Choose a material"
+    )
+
+    custom_preamble_bool: bpy.props.BoolProperty(
+        name="Use Custom Preamble", description="Use a custom preamble", default=False
+    )
+
+    preamble_path: bpy.props.StringProperty(
+        name="Preamble",
+        description="Choose a .tex file for the preamble",
+        default="",
+        update=lambda s, c: rel_to_abs("preamble_path"),
+        subtype="FILE_PATH",
+    )
+
+
+class SciBlend_VolumeRender_Props(bpy.types.PropertyGroup):
+    vdb_path: bpy.props.StringProperty(
         name=".vdb",
         description="Path to .vdb file for volume rendering",
         subtype="FILE_PATH",
     )
-    volume_render_save_relative: bpy.props.BoolProperty(
+    save_relative: bpy.props.BoolProperty(
         name="Store relative path",
         description="Store .vdb filepath relative to this .blend",
         default=False,
     )
-    volume_render_numpy_path: bpy.props.StringProperty(
+    numpy_path: bpy.props.StringProperty(
         name=".npy / .npz",
         description="Path to a 3D NumPy array file",
         subtype="FILE_PATH",
     )
-    volume_render_npz_key: bpy.props.StringProperty(
+    npz_key: bpy.props.StringProperty(
         name="NPZ field",
         description="Dataset key inside .npz (leave empty for .npy)",
         default="",
     )
-    volume_render_numpy_axis_order: bpy.props.EnumProperty(
+    numpy_axis_order: bpy.props.EnumProperty(
         name="Axis order",
         description="Order of axes in the input array",
         items=[
@@ -600,6 +771,93 @@ class SciBlend_Props(bpy.types.PropertyGroup):
         ],
         default="ZYX",
     )
+
+
+class SciBlend_Material_Props:
+    @staticmethod
+    def register():
+        if hasattr(bpy.types.Material, "volume_colormap"):
+            del bpy.types.Material.volume_colormap
+        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
+            del bpy.types.Material.volume_colormap_reversed
+        if hasattr(bpy.types.Material, "volume_hist_vmin"):
+            del bpy.types.Material.volume_hist_vmin
+        if hasattr(bpy.types.Material, "volume_hist_vmax"):
+            del bpy.types.Material.volume_hist_vmax
+        if hasattr(bpy.types.Material, "volume_hist_q05"):
+            del bpy.types.Material.volume_hist_q05
+        if hasattr(bpy.types.Material, "volume_hist_q95"):
+            del bpy.types.Material.volume_hist_q95
+        if hasattr(bpy.types.Material, "volume_hist_image"):
+            del bpy.types.Material.volume_hist_image
+        if hasattr(bpy.types.Material, "volume_hist_ready"):
+            del bpy.types.Material.volume_hist_ready
+        bpy.types.Material.volume_colormap = bpy.props.EnumProperty(
+            name="Colormap",
+            description="Colormap for the volume material",
+            items=enum_colormap_items,
+            default=0,
+            update=_on_material_colormap_change,
+        )
+        bpy.types.Material.volume_colormap_reversed = bpy.props.BoolProperty(
+            name="Reverse colormap",
+            description="Reverse the selected colormap (like Matplotlib _r)",
+            default=False,
+            update=_on_material_colormap_change,
+        )
+        bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
+            name="Min value",
+            description="Smallest value of imported NumPy data",
+            default=0.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_vmax = bpy.props.FloatProperty(
+            name="Max value",
+            description="Largest value of imported NumPy data",
+            default=1.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_q05 = bpy.props.FloatProperty(
+            name="5% lows",
+            description="Smallest 5% of imported NumPy data",
+            default=0.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_q95 = bpy.props.FloatProperty(
+            name="5% highs",
+            description="Largest 5% of imported NumPy data",
+            default=1.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_image = bpy.props.PointerProperty(
+            name="Histogram",
+            type=bpy.types.Image,
+            description="Histogram preview image",
+        )
+        bpy.types.Material.volume_hist_ready = bpy.props.BoolProperty(
+            name="Histogram Ready",
+            description="True if histogram comes from NumPy import",
+            default=False,
+        )
+
+    @staticmethod
+    def unregister():
+        if hasattr(bpy.types.Material, "volume_hist_ready"):
+            del bpy.types.Material.volume_hist_ready
+        if hasattr(bpy.types.Material, "volume_hist_image"):
+            del bpy.types.Material.volume_hist_image
+        if hasattr(bpy.types.Material, "volume_hist_q95"):
+            del bpy.types.Material.volume_hist_q95
+        if hasattr(bpy.types.Material, "volume_hist_q05"):
+            del bpy.types.Material.volume_hist_q05
+        if hasattr(bpy.types.Material, "volume_hist_vmax"):
+            del bpy.types.Material.volume_hist_vmax
+        if hasattr(bpy.types.Material, "volume_hist_vmin"):
+            del bpy.types.Material.volume_hist_vmin
+        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
+            del bpy.types.Material.volume_colormap_reversed
+        if hasattr(bpy.types.Material, "volume_colormap"):
+            del bpy.types.Material.volume_colormap
 
 
 # -----------------------------
@@ -634,14 +892,14 @@ class SciBlend_Tools_FixColors(bpy.types.Operator):
 
 
 class SciBlend_Tools_SetBackground(bpy.types.Operator):
-    bl_idname = "sci_blend.set_background"
+    bl_idname = "sci_blend.tools_set_background"
     bl_label = "Set Background Color"
     bl_description = "Set background color for the scene"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        props = context.scene.sci_blend
-        color = props.tools_background_color
+        props = context.scene.sci_blend_tools
+        color = props.background_color
         world = bpy.context.scene.world
         if world is None:
             world = bpy.data.worlds.new("World")
@@ -653,34 +911,6 @@ class SciBlend_Tools_SetBackground(bpy.types.Operator):
         return {"FINISHED"}
 
 
-def create_volume_object(context, store_path, abspath):
-    scene = context.scene
-    display_name = bpy.path.display_name_from_filepath(abspath)
-    base_name = f"{display_name}_Volume"
-
-    vol_data = bpy.data.volumes.new(name=base_name)
-    vol_data.filepath = store_path
-
-    vol_obj = bpy.data.objects.new(base_name, vol_data)
-    collection = context.collection or context.scene.collection
-    collection.objects.link(vol_obj)
-    vol_obj.location = scene.cursor.location
-    vol_obj.scale = (0.01, 0.01, 0.01)
-
-    active_obj = vol_obj
-    bpy.ops.object.select_all(action="DESELECT")
-    active_obj.select_set(True)
-    context.view_layer.objects.active = active_obj
-
-    mat = _create_or_reset_volume_material(f"{display_name}_Material")
-    if len(vol_obj.data.materials) == 0:
-        vol_obj.data.materials.append(mat)
-    else:
-        vol_obj.data.materials[0] = mat
-
-    return base_name, display_name, mat
-
-
 class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
     bl_idname = "sci_blend.volume_render_import_vdb"
     bl_label = "Import .vdb as volume"
@@ -689,21 +919,19 @@ class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
 
     def execute(self, context):
         scn = context.scene
-        props = scn.sci_blend
+        props = scn.sci_blend_volume_render
 
-        if not props.volume_render_vdb_path:
+        if not props.vdb_path:
             self.report({"ERROR"}, "Please pick a valid .vdb file first.")
             return {"CANCELLED"}
 
-        abspath = bpy.path.abspath(props.volume_render_vdb_path)
+        abspath = bpy.path.abspath(props.vdb_path)
         if not os.path.exists(abspath):
             self.report({"ERROR"}, f"File not found:\n{abspath}")
             return {"CANCELLED"}
 
-        store_path = (
-            bpy.path.relpath(abspath) if props.volume_render_save_relative else abspath
-        )
-        _, display_name, mat = create_volume_object(context, store_path, abspath)
+        store_path = bpy.path.relpath(abspath) if props.save_relative else abspath
+        _, display_name, mat = _create_volume_object(context, store_path, abspath)
 
         if mat is not None:
             _clear_histogram_on_material(mat)
@@ -750,8 +978,8 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
             q05, q95 = bns[imin], bns[imax]
             return cnt.astype(np.int32, copy=False), float(q05), float(q95), vmin, vmax
 
-        props = context.scene.sci_blend
-        path = bpy.path.abspath(props.volume_render_numpy_path or "")
+        props = context.scene.sci_blend_volume_render
+        path = bpy.path.abspath(props.numpy_path or "")
         if not path or not os.path.exists(path):
             self.report({"ERROR"}, "Pick a valid .npy /.npz file first.")
             return {"CANCELLED"}
@@ -763,7 +991,7 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
                 arr = np.load(path, allow_pickle=False)
             elif ext == ".npz":
                 z = np.load(path, allow_pickle=False)
-                key = props.volume_render_npz_key.strip()
+                key = props.npz_key.strip()
                 if not key:
                     self.report(
                         {"ERROR"}, f"NPZ datasets: {list(z.files)} — set 'NPZ field'."
@@ -796,7 +1024,7 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
             "XZY": (2, 0, 1),
             "YXZ": (1, 0, 2),
         }
-        axes = order_map.get(props.volume_render_numpy_axis_order, (0, 1, 2))
+        axes = order_map.get(props.numpy_axis_order, (0, 1, 2))
         arr = np.transpose(arr, axes).astype(np.float64, copy=False)
         arr = np.nan_to_num(arr, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -827,8 +1055,8 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
         os.makedirs(cache_dir, exist_ok=True)
         if ext == ".npz":
             base = os.path.splitext(os.path.basename(path))[0]
-            if props.volume_render_npz_key.strip():
-                base += f"_{props.volume_render_npz_key.strip()}"
+            if props.npz_key.strip():
+                base += f"_{props.npz_key.strip()}"
         else:
             base = os.path.splitext(os.path.basename(path))[0]
         vdb_path = os.path.join(cache_dir, f"{base}.vdb")
@@ -838,12 +1066,8 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
             self.report({"ERROR"}, f"Failed to write VDB: {e}")
             return {"CANCELLED"}
 
-        store_path = (
-            bpy.path.relpath(vdb_path)
-            if props.volume_render_save_relative
-            else vdb_path
-        )
-        vol_name, _, mat = create_volume_object(context, store_path, vdb_path)
+        store_path = bpy.path.relpath(vdb_path) if props.save_relative else vdb_path
+        vol_name, _, mat = _create_volume_object(context, store_path, vdb_path)
 
         if mat is not None:
             _store_histogram_on_material(mat, _hist, _vmin, _vmax, _q05, _q95)
@@ -962,7 +1186,7 @@ class SciBlend_Tools_3DV_UI(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        props = context.scene.sci_blend
+        props = context.scene.sci_blend_tools
 
         col = layout.column(align=True)
 
@@ -975,8 +1199,8 @@ class SciBlend_Tools_3DV_UI(bpy.types.Panel):
         col.operator("sci_blend.fix_colors", icon="COLOR")
 
         col.separator()
-        col.prop(props, "tools_background_color")
-        col.operator("sci_blend.set_background", icon="WORLD")
+        col.prop(props, "background_color")
+        col.operator("sci_blend.tools_set_background", icon="WORLD")
 
 
 class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
@@ -987,28 +1211,98 @@ class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        props = context.scene.sci_blend
+        props = context.scene.sci_blend_volume_render
 
         col = layout.column(align=True)
-        col.prop(props, "volume_render_save_relative")
+        col.prop(props, "save_relative")
 
         col.separator()
         col.label(text="VDB → Volume (.vdb)")
-        col.prop(props, "volume_render_vdb_path")
+        col.prop(props, "vdb_path")
         col.operator("sci_blend.volume_render_import_vdb", icon="IMPORT")
 
         col.separator()
         col.label(text="NumPy → Volume (.npy / .npz)")
-        col.prop(props, "volume_render_numpy_path")
-        col.prop(props, "volume_render_npz_key")
+        col.prop(props, "numpy_path")
+        col.prop(props, "npz_key")
         row = col.row(align=True)
-        row.prop(props, "volume_render_numpy_axis_order")
+        row.prop(props, "numpy_axis_order")
         col.operator("sci_blend.volume_render_import_numpy", icon="IMPORT")
+
+
+class SciBlend_Latex_3DV_UI(bpy.types.Panel):
+    bl_label = "Latex"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "SciBlend"
+    bl_context = "objectmode"
+
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.sci_blend_latex
+
+        layout.prop(props, "latex_code")
+        layout.separator()
+
+        layout.prop(props, "command_selection")
+        layout.separator
+
+        box = layout.box()
+        box.label(text="Paths to directories containing commands.")
+        row = box.row()
+        row.prop(props, "custom_latex_path")
+        row = box.row()
+        row.prop(props, "custom_pdflatex_path")
+        row = box.row()
+        row.prop(props, "custom_xelatex_path")
+        row = box.row()
+        row.prop(props, "custom_lualatex_path")
+        row = box.row()
+        row.prop(props, "custom_dvisvgm_path")
+
+        box = layout.box()
+        box.label(text="Transform Settings")
+        row = box.row()
+        row.prop(props, "text_scale")
+
+        split = box.split()
+
+        col = split.column(align=True)
+        col.label(text="Location:")
+        col.prop(props, "x_loc")
+        col.prop(props, "y_loc")
+        col.prop(props, "z_loc")
+
+        col = split.column(align=True)
+        col.label(text="Rotation:")
+        col.prop(props, "x_rot")
+        col.prop(props, "y_rot")
+        col.prop(props, "z_rot")
+
+        layout.prop(props, "custom_preamble_bool")
+        if props.custom_preamble_bool:
+            layout.prop(props, "preamble_path")
+
+        layout.prop(props, "custom_material_bool")
+        if props.custom_material_bool:
+            layout.prop(props, "custom_material_value")
+
+        layout.separator()
+
+        # box = layout.box()
+        # row = box.row()
+        # row.operator("wm.compile_as_mesh")
+        # row = box.row()
+        # row.operator("wm.compile_as_grease_pencil")
 
 
 # -----------------------------
 classes = (
-    SciBlend_Props,
+    # props
+    SciBlend_Tools_Props,
+    SciBlend_Latex_Props,
+    SciBlend_VolumeRender_Props,
+    # operators
     SciBlend_Materials_ReverseVolumeColormap,
     SciBlend_Materials_CreateOrResetVolumeMaterial,
     SciBlend_Tools_FixColors,
@@ -1016,8 +1310,10 @@ classes = (
     SciBlend_Tools_SetBackground,
     SciBlend_VolumeRender_ImportVDB,
     SciBlend_VolumeRender_ImportNumpy,
+    # panels
     SciBlend_Material_NDE_UI,
     SciBlend_Tools_3DV_UI,
+    SciBlend_Latex_3DV_UI,
     SciBlend_VolumeRender_3DV_UI,
 )
 
@@ -1026,88 +1322,24 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     _build_colormap_previews()
-    if hasattr(bpy.types.Material, "volume_colormap"):
-        del bpy.types.Material.volume_colormap
-    bpy.types.Material.volume_colormap = bpy.props.EnumProperty(
-        name="Colormap",
-        description="Colormap for the volume material",
-        items=enum_colormap_items,
-        default=0,
-        update=_on_material_colormap_change,
-    )
-    bpy.types.Material.volume_colormap_reversed = bpy.props.BoolProperty(
-        name="Reverse colormap",
-        description="Reverse the selected colormap (like Matplotlib _r)",
-        default=False,
-        update=_on_material_colormap_change,
-    )
-    # Histogram (NumPy import only)
-    if hasattr(bpy.types.Material, "volume_hist_vmin"):
-        del bpy.types.Material.volume_hist_vmin
-    if hasattr(bpy.types.Material, "volume_hist_vmax"):
-        del bpy.types.Material.volume_hist_vmax
-    if hasattr(bpy.types.Material, "volume_hist_q05"):
-        del bpy.types.Material.volume_hist_q05
-    if hasattr(bpy.types.Material, "volume_hist_q95"):
-        del bpy.types.Material.volume_hist_q95
-    if hasattr(bpy.types.Material, "volume_hist_image"):
-        del bpy.types.Material.volume_hist_image
-    if hasattr(bpy.types.Material, "volume_hist_ready"):
-        del bpy.types.Material.volume_hist_ready
-    bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
-        name="Min value",
-        description="Smallest value of imported NumPy data",
-        default=0.0,
-        precision=6,
-    )
-    bpy.types.Material.volume_hist_vmax = bpy.props.FloatProperty(
-        name="Max value",
-        description="Largest value of imported NumPy data",
-        default=1.0,
-        precision=6,
-    )
-    bpy.types.Material.volume_hist_q05 = bpy.props.FloatProperty(
-        name="5% lows",
-        description="Smallest 5% of imported NumPy data",
-        default=0.0,
-        precision=6,
-    )
-    bpy.types.Material.volume_hist_q95 = bpy.props.FloatProperty(
-        name="5% highs",
-        description="Largest 5% of imported NumPy data",
-        default=1.0,
-        precision=6,
-    )
-    bpy.types.Material.volume_hist_image = bpy.props.PointerProperty(
-        name="Histogram", type=bpy.types.Image, description="Histogram preview image"
-    )
-    bpy.types.Material.volume_hist_ready = bpy.props.BoolProperty(
-        name="Histogram Ready",
-        description="True if histogram comes from NumPy import",
-        default=False,
-    )
+    SciBlend_Material_Props.register()
 
-    bpy.types.Scene.sci_blend = bpy.props.PointerProperty(type=SciBlend_Props)
+    bpy.types.Scene.sci_blend_tools = bpy.props.PointerProperty(
+        type=SciBlend_Tools_Props
+    )
+    bpy.types.Scene.sci_blend_volume_render = bpy.props.PointerProperty(
+        type=SciBlend_VolumeRender_Props
+    )
+    bpy.types.Scene.sci_blend_latex = bpy.props.PointerProperty(
+        type=SciBlend_Latex_Props
+    )
 
 
 def unregister():
-    del bpy.types.Scene.sci_blend
-    if hasattr(bpy.types.Material, "volume_hist_ready"):
-        del bpy.types.Material.volume_hist_ready
-    if hasattr(bpy.types.Material, "volume_hist_image"):
-        del bpy.types.Material.volume_hist_image
-    if hasattr(bpy.types.Material, "volume_hist_q95"):
-        del bpy.types.Material.volume_hist_q95
-    if hasattr(bpy.types.Material, "volume_hist_q05"):
-        del bpy.types.Material.volume_hist_q05
-    if hasattr(bpy.types.Material, "volume_hist_vmax"):
-        del bpy.types.Material.volume_hist_vmax
-    if hasattr(bpy.types.Material, "volume_hist_vmin"):
-        del bpy.types.Material.volume_hist_vmin
-    if hasattr(bpy.types.Material, "volume_colormap_reversed"):
-        del bpy.types.Material.volume_colormap_reversed
-    if hasattr(bpy.types.Material, "volume_colormap"):
-        del bpy.types.Material.volume_colormap
+    del bpy.types.Scene.sci_blend_tools
+    del bpy.types.Scene.sci_blend_volume_render
+    del bpy.types.Scene.sci_blend_latex
+    SciBlend_Material_Props.unregister()
     _free_colormap_previews()
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
