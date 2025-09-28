@@ -443,6 +443,94 @@ def _create_or_reset_volume_material(name) -> bpy.types.Material:
     return mat
 
 
+def _store_histogram_on_material(
+    mat: bpy.types.Material,
+    hist: np.ndarray,
+    vmin: float,
+    vmax: float,
+    q05: float,
+    q95: float,
+    width: int = 256,
+    height: int = 120,
+):
+    bins = int(hist.size)
+    # --- draw pixels ---
+    px = np.empty((height, width, 4), dtype=np.float32)
+
+    px[..., 0:3] = 0.22
+    px[..., 3] = 1.0
+
+    hmax = int(hist.max()) if hist.size else 1
+    if hmax < 1:
+        hmax = 1
+
+    # normalized heights (0..H-10)
+    heights = np.ceil((hist.astype(np.float32) / float(hmax)) * (height - 10)).astype(
+        np.int32
+    )
+
+    # draw per-bin rectangles with >=2 px width
+    for i in range(bins):
+        x0 = int(i * width / bins)
+        x1 = int((i + 1) * width / bins)
+        if x1 <= x0:
+            x1 = x0 + 1
+        # ensure visible min width
+        if x1 - x0 < 2:
+            x1 = x0 + 2 if x0 + 2 <= width else width
+
+        h = int(heights[i])
+        if h > 0:
+            px[0:h, x0:x1, 0:3] = 0.98
+            px[0:h, x0:x1, 3] = 1.0
+
+    if vmin < q05 < vmax:
+        iq05 = int((q05 - vmin) / (vmax - vmin) * width)
+        px[:, iq05 : min(iq05 + 2, width), 0] = 1.0
+        px[:, iq05 : min(iq05 + 2, width), 1:3] = 0.2
+        px[:, iq05 : min(iq05 + 2, width), 3] = 1.0
+
+    if vmin < q95 < vmax:
+        iq95 = int((q95 - vmin) / (vmax - vmin) * width)
+        px[:, iq95 : min(iq95 + 2, width), 0] = 1.0
+        px[:, iq95 : min(iq95 + 2, width), 1:3] = 0.2
+        px[:, iq95 : min(iq95 + 2, width), 3] = 1.0
+
+    img_name = f"SB_Hist_{mat.name}"
+    img = bpy.data.images.get(img_name)
+    if img is None:
+        img = bpy.data.images.new(
+            img_name, width=width, height=height, alpha=True, float_buffer=True
+        )
+        img.colorspace_settings.name = "Non-Color"
+        img.alpha_mode = "STRAIGHT"
+        img.use_fake_user = True
+    else:
+        if img.size[0] != width or img.size[1] != height:
+            img.scale(width, height)
+
+    img.pixels[:] = px.ravel().tolist()
+    img.update()
+    img.preview_ensure()
+
+    # Store on the material
+    mat.volume_hist_vmin = float(vmin)
+    mat.volume_hist_vmax = float(vmax)
+    mat.volume_hist_q05 = float(q05)
+    mat.volume_hist_q95 = float(q95)
+    mat.volume_hist_image = img
+    mat.volume_hist_ready = True
+
+
+def _clear_histogram_on_material(mat: bpy.types.Material):
+    mat.volume_hist_vmin = 0.0
+    mat.volume_hist_vmax = 0.0
+    mat.volume_hist_q05 = 0.0
+    mat.volume_hist_q95 = 0.0
+    mat.volume_hist_image = None
+    mat.volume_hist_ready = False
+
+
 # -----------------------------
 # Callbacks
 # -----------------------------
@@ -590,7 +678,7 @@ def create_volume_object(context, store_path, abspath):
     else:
         vol_obj.data.materials[0] = mat
 
-    return base_name, display_name
+    return base_name, display_name, mat
 
 
 class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
@@ -615,7 +703,10 @@ class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
         store_path = (
             bpy.path.relpath(abspath) if props.volume_render_save_relative else abspath
         )
-        _, display_name = create_volume_object(context, store_path, abspath)
+        _, display_name, mat = create_volume_object(context, store_path, abspath)
+
+        if mat is not None:
+            _clear_histogram_on_material(mat)
 
         self.report({"INFO"}, f"Created Volume from .vdb file: {display_name}")
         return {"FINISHED"}
@@ -631,6 +722,33 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
 
     def execute(self, context):
         import os
+
+        def _compute_histogram_np(arr: np.ndarray, bins: int = 128):
+            """
+            Returns (hist: np.ndarray[int], q05: float, q95: float, vmin: float, vmax: float).
+            Uses full range [min, max] for the histogram, and rough numpy quantiles for 5/95%.
+            Assumes arr is already finite and float.
+            """
+            flat = arr.astype(np.float64, copy=False).ravel()
+            if flat.size == 0:
+                return np.zeros(bins, dtype=np.int32), 0.0, 0.0, 0.0, 1.0
+
+            vmin = float(flat.min())
+            vmax = float(flat.max())
+
+            if vmax == vmin:
+                vmax = vmin + 1e-12
+            cnt, bns = np.histogram(flat, bins=bins, range=(vmin, vmax))
+            bns = 0.5 * (bns[1:] + bns[:-1])
+            cumsum = np.cumsum(cnt)
+            imin = np.argmin(
+                np.abs(cumsum - 0.05 * (cumsum[-1] - cumsum[0]) - cumsum[0])
+            )
+            imax = np.argmin(
+                np.abs(cumsum - 0.95 * (cumsum[-1] - cumsum[0]) - cumsum[0])
+            )
+            q05, q95 = bns[imin], bns[imax]
+            return cnt.astype(np.int32, copy=False), float(q05), float(q95), vmin, vmax
 
         props = context.scene.sci_blend
         path = bpy.path.abspath(props.volume_render_numpy_path or "")
@@ -682,6 +800,8 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
         arr = np.transpose(arr, axes).astype(np.float64, copy=False)
         arr = np.nan_to_num(arr, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
 
+        _hist, _q05, _q95, _vmin, _vmax = _compute_histogram_np(arr, bins=128)
+
         try:
             try:
                 import pyopenvdb as vdb  # type: ignore
@@ -697,7 +817,6 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
 
         grid = vdb.DoubleGrid()
         grid.name = "density"
-        # shape must be (Z, Y, X)
         grid.copyFromArray(arr)
 
         # Output file under same directory in 'sciblend_cache'
@@ -724,7 +843,10 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
             if props.volume_render_save_relative
             else vdb_path
         )
-        vol_name, _ = create_volume_object(context, store_path, vdb_path)
+        vol_name, _, mat = create_volume_object(context, store_path, vdb_path)
+
+        if mat is not None:
+            _store_histogram_on_material(mat, _hist, _vmin, _vmax, _q05, _q95)
 
         self.report(
             {"INFO"},
@@ -747,7 +869,6 @@ class SciBlend_Materials_ReverseVolumeColormap(bpy.types.Operator):
         mat.volume_colormap_reversed = not bool(
             getattr(mat, "volume_colormap_reversed", False)
         )
-        # Re-apply ramp with the new state
         _on_material_colormap_change(mat, context)
         self.report({"INFO"}, f"Colormap reversed: {mat.volume_colormap_reversed}")
         return {"FINISHED"}
@@ -801,17 +922,36 @@ class SciBlend_Material_NDE_UI(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.operator(
+            "sci_blend.materials_create_or_reset_volume_material",
+            icon="NODETREE",
+            text="Create/reset volume material",
+        )
+        layout.separator()
+
+        row = layout.row(align=True)
+        row.operator(
             "sci_blend.materials_reverse_volume_colormap",
             icon="ARROW_LEFTRIGHT",
             text="Reverse colormap",
         )
 
-        row = layout.row(align=True)
-        row.operator(
-            "sci_blend.materials_create_or_reset_volume_material",
-            icon="NODETREE",
-            text="Create/reset volume material",
-        )
+        if getattr(mat, "volume_hist_ready", False) and mat.volume_hist_image:
+            layout.separator()
+            layout.label(text="Value ranges")
+
+            col = layout.column(align=True)
+            col.label(text=f"min: {mat.volume_hist_vmin:.3g}")
+            col.label(text=f"max: {mat.volume_hist_vmax:.3g}")
+            col.label(text=f"lower 5%: {mat.volume_hist_q05:.3g}")
+            col.label(text=f"upper 5%: {mat.volume_hist_q95:.3g}")
+
+            layout.label(text="Histogram", icon="GRAPH")
+            box = layout.box()
+            row = box.row()
+            row.ui_units_x = 24
+            row.scale_y = 2.0
+            icon_id = mat.volume_hist_image.preview.icon_id
+            row.template_icon(icon_value=icon_id, scale=6.0)
 
 
 class SciBlend_Tools_3DV_UI(bpy.types.Panel):
@@ -901,11 +1041,69 @@ def register():
         default=False,
         update=_on_material_colormap_change,
     )
+    # Histogram (NumPy import only)
+    if hasattr(bpy.types.Material, "volume_hist_vmin"):
+        del bpy.types.Material.volume_hist_vmin
+    if hasattr(bpy.types.Material, "volume_hist_vmax"):
+        del bpy.types.Material.volume_hist_vmax
+    if hasattr(bpy.types.Material, "volume_hist_q05"):
+        del bpy.types.Material.volume_hist_q05
+    if hasattr(bpy.types.Material, "volume_hist_q95"):
+        del bpy.types.Material.volume_hist_q95
+    if hasattr(bpy.types.Material, "volume_hist_image"):
+        del bpy.types.Material.volume_hist_image
+    if hasattr(bpy.types.Material, "volume_hist_ready"):
+        del bpy.types.Material.volume_hist_ready
+    bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
+        name="Min value",
+        description="Smallest value of imported NumPy data",
+        default=0.0,
+        precision=6,
+    )
+    bpy.types.Material.volume_hist_vmax = bpy.props.FloatProperty(
+        name="Max value",
+        description="Largest value of imported NumPy data",
+        default=1.0,
+        precision=6,
+    )
+    bpy.types.Material.volume_hist_q05 = bpy.props.FloatProperty(
+        name="5% lows",
+        description="Smallest 5% of imported NumPy data",
+        default=0.0,
+        precision=6,
+    )
+    bpy.types.Material.volume_hist_q95 = bpy.props.FloatProperty(
+        name="5% highs",
+        description="Largest 5% of imported NumPy data",
+        default=1.0,
+        precision=6,
+    )
+    bpy.types.Material.volume_hist_image = bpy.props.PointerProperty(
+        name="Histogram", type=bpy.types.Image, description="Histogram preview image"
+    )
+    bpy.types.Material.volume_hist_ready = bpy.props.BoolProperty(
+        name="Histogram Ready",
+        description="True if histogram comes from NumPy import",
+        default=False,
+    )
+
     bpy.types.Scene.sci_blend = bpy.props.PointerProperty(type=SciBlend_Props)
 
 
 def unregister():
     del bpy.types.Scene.sci_blend
+    if hasattr(bpy.types.Material, "volume_hist_ready"):
+        del bpy.types.Material.volume_hist_ready
+    if hasattr(bpy.types.Material, "volume_hist_image"):
+        del bpy.types.Material.volume_hist_image
+    if hasattr(bpy.types.Material, "volume_hist_q95"):
+        del bpy.types.Material.volume_hist_q95
+    if hasattr(bpy.types.Material, "volume_hist_q05"):
+        del bpy.types.Material.volume_hist_q05
+    if hasattr(bpy.types.Material, "volume_hist_vmax"):
+        del bpy.types.Material.volume_hist_vmax
+    if hasattr(bpy.types.Material, "volume_hist_vmin"):
+        del bpy.types.Material.volume_hist_vmin
     if hasattr(bpy.types.Material, "volume_colormap_reversed"):
         del bpy.types.Material.volume_colormap_reversed
     if hasattr(bpy.types.Material, "volume_colormap"):

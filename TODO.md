@@ -1,6 +1,7 @@
 - [x] vdb import
+- [x] numpy import
 - [x] create volume material + colormap
-- [ ] histogram of volume data
+- [x] histogram of volume data
 - [ ] add latex text labels
 - [ ] add arrows
 - [ ] add box 
