@@ -2,7 +2,7 @@
 - [x] numpy import
 - [x] create volume material + colormap
 - [x] histogram of volume data
-- [ ] add latex text labels
+- [x] add latex text labels
 - [ ] add arrows
 - [ ] add box 
 - [ ] import xyz fields to build fieldlines + seed points

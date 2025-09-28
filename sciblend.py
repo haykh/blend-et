@@ -8,15 +8,277 @@ bl_info = {
     "category": "Object",
 }
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# The LaTeX support is adapted from the very nice ghseeli/latex2blender plugin
+# github link: https://github.com/ghseeli/latex2blender
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 import bpy  # type: ignore
 import bpy.utils.previews  # type: ignore
 import numpy as np  # type: ignore
 import os
+import shutil
+import tempfile
+import subprocess
+import glob
+import math
 
 
 # -----------------------------
 # Helpers
 # -----------------------------
+def ErrorMessageBox(message, title):
+    def draw(self, context):
+        self.layout.label(text=message)
+
+    bpy.context.window_manager.popup_menu(draw, title=title, icon="ERROR")
+
+
+def _compile_with_latex(
+    self,
+    context,
+    latex_code,
+    custom_latex_path,
+    custom_pdflatex_path,
+    custom_xelatex_path,
+    custom_lualatex_path,
+    custom_dvisvgm_path,
+    command_selection,
+    text_scale,
+    text_thickness,
+    x_loc,
+    y_loc,
+    z_loc,
+    x_rot,
+    y_rot,
+    z_rot,
+    custom_preamble_bool,
+    temp_dir,
+    custom_material_bool,
+    custom_material_value,
+    compile_mode,
+    preamble_path=None,
+):
+
+    # Set current directory to temp_directory
+    current_dir = os.getcwd()
+    os.chdir(temp_dir)
+    temp_dir = os.path.realpath(temp_dir)
+
+    # Create temp latex file with specified preamble.
+    temp_file_name = temp_dir + os.sep + "temp"
+    if custom_preamble_bool:
+        shutil.copy(preamble_path, temp_file_name + ".tex")  # type: ignore
+        temp = open(temp_file_name + ".tex", "a")
+    else:
+        temp = open(temp_file_name + ".tex", "a")
+        default_preamble = (
+            "\\documentclass{amsart}\n\\usepackage{amssymb,amsfonts}\n\\usepackage{tikz}"
+            "\n\\usepackage{tikz-cd}\n\\pagestyle{empty}\n\\thispagestyle{empty}"
+        )
+        temp.write(default_preamble)
+
+    # Add latex code to temp.tex and close the file.
+    temp.write("\n\\begin{document}\n" + latex_code + "\n\\end{document}")
+    temp.close()
+
+    # Try to compile temp.tex and create an svg file
+    try:
+        # Updates 'PATH' to include reference to folder containing latex and dvisvgm executable files.
+        latex_exec_path = "/Library/TeX/texbin"
+        local_env = os.environ.copy()
+        local_env["PATH"] = latex_exec_path + os.pathsep + local_env["PATH"]
+
+        if custom_latex_path != "" and custom_latex_path != "/Library/TeX/texbin":
+            local_env["PATH"] = custom_latex_path + os.pathsep + local_env["PATH"]
+        if (
+            custom_pdflatex_path != ""
+            and custom_pdflatex_path != "/Library/TeX/texbin"
+            and custom_pdflatex_path != custom_latex_path
+        ):
+            local_env["PATH"] = custom_pdflatex_path + os.pathsep + local_env["PATH"]
+        if (
+            custom_xelatex_path != ""
+            and custom_xelatex_path != "/Library/TeX/texbin"
+            and custom_xelatex_path != custom_latex_path
+            and custom_xelatex_path != custom_pdflatex_path
+        ):
+            local_env["PATH"] = custom_xelatex_path + os.pathsep + local_env["PATH"]
+        if (
+            custom_lualatex_path != ""
+            and custom_lualatex_path != "/Library/TeX/texbin"
+            and custom_lualatex_path != custom_latex_path
+            and custom_lualatex_path != custom_pdflatex_path
+            and custom_lualatex_path != custom_xelatex_path
+        ):
+            local_env["PATH"] = custom_lualatex_path + os.pathsep + local_env["PATH"]
+        if (
+            custom_dvisvgm_path != ""
+            and custom_dvisvgm_path != "/Library/TeX/texbin"
+            and custom_dvisvgm_path != custom_latex_path
+            and custom_dvisvgm_path != custom_pdflatex_path
+            and custom_dvisvgm_path != custom_xelatex_path
+            and custom_dvisvgm_path != custom_lualatex_path
+        ):
+            local_env["PATH"] = custom_dvisvgm_path + os.pathsep + local_env["PATH"]
+        if command_selection == "latex":
+            tex_process = subprocess.run(
+                ["latex", "-interaction=nonstopmode", temp_file_name + ".tex"],
+                env=local_env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        elif command_selection == "pdflatex":
+            tex_process = subprocess.run(
+                [
+                    "pdflatex",
+                    "-interaction=nonstopmode",
+                    "-output-format=dvi",
+                    temp_file_name + ".tex",
+                ],
+                env=local_env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        elif command_selection == "xelatex":
+            tex_process = subprocess.run(
+                [
+                    "xelatex",
+                    "-interaction=nonstopmode",
+                    "-no-pdf",
+                    temp_file_name + ".tex",
+                ],
+                env=local_env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        else:
+            tex_process = subprocess.run(
+                [
+                    "lualatex",
+                    "-interaction=nonstopmode",
+                    "-output-format=dvi",
+                    temp_file_name + ".tex",
+                ],
+                env=local_env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        dvisvgm_process = subprocess.run(
+            ["dvisvgm", "--no-fonts", temp_file_name + ".dvi"],
+            env=local_env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        svg_file_list = glob.glob("*.svg")
+        bpy.ops.object.select_all(action="DESELECT")
+
+        if len(svg_file_list) == 0:
+            self.report(
+                {"ERROR"},
+                "Please check your LaTeX code for errors and that LaTeX and dvisvgm are properly "
+                "installed and their paths are specified correctly. Also, if using a custom preamble, check that it is formatted correctly. \n"
+                "Tex return code " + str(tex_process.returncode) + "\n"
+                "dvi2svgm return code " + str(dvisvgm_process.returncode) + "\n"
+                "Tex error message: " + str(tex_process.stdout) + "\n"
+                "dvi2svgm error message: " + str(dvisvgm_process.stdout),
+            )
+
+        else:
+            svg_file_path = temp_dir + os.sep + svg_file_list[0]
+
+            objects_before_import = bpy.data.objects[:]
+            # Import svg into blender as curve
+            bpy.ops.import_curve.svg(filepath=svg_file_path)
+
+            # Select imported objects
+            imported_curve = [
+                x for x in bpy.data.objects if x not in objects_before_import
+            ]
+            active_obj = imported_curve[0]
+            context.view_layer.objects.active = active_obj
+            for x in imported_curve:
+                x.select_set(True)
+
+            # Convert to mesh
+            bpy.ops.object.convert(target="MESH")
+
+            # Join components to merge into single object
+            bpy.ops.object.join()
+
+            # Adjust scale, location, and rotation.
+            bpy.ops.object.origin_set(type="ORIGIN_CENTER_OF_MASS", center="MEDIAN")
+            active_obj.scale = (600 * text_scale, 600 * text_scale, 600 * text_scale)
+            bpy.ops.object.transform_apply(location=False, scale=True, rotation=False)
+            active_obj.location = (x_loc, y_loc, z_loc)
+            active_obj.rotation_euler = (
+                math.radians(x_rot),
+                math.radians(y_rot),
+                math.radians(z_rot),
+            )
+
+            # Move mesh to scene collection and delete the temp.svg collection. Then rename mesh.
+            temp_svg_collection = active_obj.users_collection[0]
+            bpy.ops.object.move_to_collection(collection_index=0)
+            bpy.data.collections.remove(temp_svg_collection)
+            active_obj.name = "LaTeX Figure"
+
+            if custom_material_bool:
+                active_obj.material_slots[0].material = custom_material_value
+
+            if compile_mode == "grease pencil":
+                # Convert to grease pencil
+                bpy.ops.object.convert(
+                    target="GREASEPENCIL",
+                    thickness=1,
+                    offset=0,
+                )
+
+                # Moves to scene collection, fixes name.
+                bpy.ops.object.move_to_collection(collection_index=0)
+                bpy.context.selected_objects[0].name = "LaTeX Figure"
+                if custom_material_bool:
+                    bpy.context.selected_objects[0].material_slots[
+                        0
+                    ].material = custom_material_value
+            elif compile_mode == "mesh":
+                bpy.ops.object.mode_set(mode="EDIT")
+                bpy.ops.mesh.select_all(action="SELECT")
+                bpy.ops.mesh.extrude_region_move(
+                    TRANSFORM_OT_translate={
+                        "value": (0, 0, text_scale * text_thickness),
+                        "orient_type": "NORMAL",
+                    },
+                )
+                bpy.ops.object.mode_set(mode="OBJECT")
+                bpy.context.selected_objects[0].data.use_auto_smooth = True
+
+            else:
+                ErrorMessageBox("Unknown compile mode.", "Error")
+            bpy.context.selected_objects[0]["Original LaTeX Code"] = latex_code
+
+    except FileNotFoundError as e:
+        ErrorMessageBox(
+            "Please check that LaTeX is installed on your system and that its path is specified correctly.",
+            "Compilation Error",
+        )
+    except subprocess.CalledProcessError as e:
+        ErrorMessageBox(
+            "Please check your LaTeX code for errors and that LaTeX and dvisvgm are properly "
+            "installed and their paths are specified correctly. Also, if using a custom preamble, check that it is formatted correctly. "
+            "Return code: " + str(e.returncode) + " " + str(e.output),
+            "Compilation Error",
+        )
+    finally:
+        os.chdir(current_dir)
+        print("Finished trying to compile LaTeX and create an svg file.")
+
+
 COLORMAPS = {
     "fire": [
         (0.0, (0.0, 0.0, 0.0)),
@@ -451,7 +713,7 @@ def _store_histogram_on_material(
     q05: float,
     q95: float,
     width: int = 256,
-    height: int = 120,
+    height: int = 256,
 ):
     bins = int(hist.size)
     # --- draw pixels ---
@@ -581,9 +843,11 @@ def _on_material_colormap_change(self, context):
 
 
 def rel_to_abs(sp_name):
-    if bpy.context.scene.my_tool[sp_name].startswith("//"):
-        abs_path = os.path.abspath(bpy.path.abspath(bpy.context.scene.my_tool[sp_name]))
-        bpy.context.scene.my_tool[sp_name] = abs_path
+    if bpy.context.scene.sci_blend_latex[sp_name].startswith("//"):
+        abs_path = os.path.abspath(
+            bpy.path.abspath(bpy.context.scene.sci_blend_latex[sp_name])
+        )
+        bpy.context.scene.sci_blend_latex[sp_name] = abs_path
 
 
 # -----------------------------
@@ -603,8 +867,8 @@ class SciBlend_Tools_Props(bpy.types.PropertyGroup):
 
 class SciBlend_Latex_Props(bpy.types.PropertyGroup):
     latex_code: bpy.props.StringProperty(
-        name="LaTeX Code",
-        description="Enter LaTeX Code",
+        name="LaTeX",
+        description="Enter LaTeX code surrounded with $...$",
         default="",
     )
 
@@ -672,6 +936,12 @@ class SciBlend_Latex_Props(bpy.types.PropertyGroup):
             ("xelatex", "xelatex", "Use xelatex command to compile code"),
             ("lualatex", "lualatex", "Use lualatex command to compile code"),
         ],
+    )
+
+    text_thickness: bpy.props.FloatProperty(
+        name="Thickness",
+        description="Set thickness of text",
+        default=0.025,
     )
 
     text_scale: bpy.props.FloatProperty(
@@ -911,6 +1181,124 @@ class SciBlend_Tools_SetBackground(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class SciBlend_Latex_CompileAsMesh(bpy.types.Operator):
+    bl_idname = "sci_blend.latex_compile_as_mesh"
+    bl_label = "Compile LaTeX as mesh"
+
+    def execute(self, context):
+        props = context.scene.sci_blend_latex
+        if (
+            props.latex_code == ""
+            and props.custom_preamble_bool
+            and props.preamble_path == ""
+        ):
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered and no preamble file has been chosen. "
+                "Please enter some LaTeX code and choose a .tex file for the preamble",
+            )
+        elif props.custom_material_bool and props.custom_material_value is None:
+            self.report(
+                {"ERROR"}, "No material has been chosen. Please choose a material."
+            )
+        elif props.latex_code == "":
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered. Please enter some LaTeX code.",
+            )
+        elif props.custom_preamble_bool and props.preamble_path == "":
+            self.report(
+                {"ERROR"}, "No preamble file has been chosen. Please choose a file."
+            )
+        else:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                _compile_with_latex(
+                    self,
+                    context,
+                    props.latex_code,
+                    props.custom_latex_path,
+                    props.custom_pdflatex_path,
+                    props.custom_xelatex_path,
+                    props.custom_lualatex_path,
+                    props.custom_dvisvgm_path,
+                    props.command_selection,
+                    props.text_scale,
+                    props.text_thickness,
+                    props.x_loc,
+                    props.y_loc,
+                    props.z_loc,
+                    props.x_rot,
+                    props.y_rot,
+                    props.z_rot,
+                    props.custom_preamble_bool,
+                    temp_dir,
+                    props.custom_material_bool,
+                    props.custom_material_value,
+                    "mesh",
+                    props.preamble_path,
+                )
+        return {"FINISHED"}
+
+
+class SciBlend_Latex_CompileAsGreasePencil(bpy.types.Operator):
+    bl_idname = "sci_blend.latex_compile_as_grease_pencil"
+    bl_label = "Compile LaTeX as grease pencil"
+
+    def execute(self, context):
+        props = context.scene.sci_blend_latex
+        if (
+            props.latex_code == ""
+            and props.custom_preamble_bool
+            and props.preamble_path == ""
+        ):
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered and no preamble file has been chosen. Please enter some "
+                "LaTeX code and choose a .tex file for the preamble",
+            )
+        elif props.custom_material_bool and props.custom_material_value is None:
+            self.report(
+                {"ERROR"}, "No material has been chosen. Please choose a material."
+            )
+        elif props.latex_code == "":
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered. Please enter some LaTeX code.",
+            )
+        elif props.custom_preamble_bool and props.preamble_path == "":
+            self.report(
+                {"ERROR"}, "No preamble file has been chosen. Please choose a file."
+            )
+        else:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                _compile_with_latex(
+                    self,
+                    context,
+                    props.latex_code,
+                    props.custom_latex_path,
+                    props.custom_pdflatex_path,
+                    props.custom_xelatex_path,
+                    props.custom_lualatex_path,
+                    props.custom_dvisvgm_path,
+                    props.command_selection,
+                    props.text_scale,
+                    props.text_thickness,
+                    props.x_loc,
+                    props.y_loc,
+                    props.z_loc,
+                    props.x_rot,
+                    props.y_rot,
+                    props.z_rot,
+                    props.custom_preamble_bool,
+                    temp_dir,
+                    props.custom_material_bool,
+                    props.custom_material_value,
+                    "grease pencil",
+                    props.preamble_path,
+                )
+        return {"FINISHED"}
+
+
 class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
     bl_idname = "sci_blend.volume_render_import_vdb"
     bl_label = "Import .vdb as volume"
@@ -1142,18 +1530,19 @@ class SciBlend_Material_NDE_UI(bpy.types.Panel):
 
         layout.use_property_split = True
         layout.use_property_decorate = False
-        layout.template_icon_view(mat, "volume_colormap", show_labels=True, scale=5)
 
-        row = layout.row(align=True)
-        row.operator(
+        layout.row().operator(
             "sci_blend.materials_create_or_reset_volume_material",
             icon="NODETREE",
             text="Create/reset volume material",
         )
         layout.separator()
 
-        row = layout.row(align=True)
-        row.operator(
+        box = layout.box()
+        box.row().label(text="Colormap", icon="COLOR")
+        box.row().template_icon_view(mat, "volume_colormap", show_labels=True, scale=5)
+
+        box.row().operator(
             "sci_blend.materials_reverse_volume_colormap",
             icon="ARROW_LEFTRIGHT",
             text="Reverse colormap",
@@ -1161,21 +1550,27 @@ class SciBlend_Material_NDE_UI(bpy.types.Panel):
 
         if getattr(mat, "volume_hist_ready", False) and mat.volume_hist_image:
             layout.separator()
-            layout.label(text="Value ranges")
-
-            col = layout.column(align=True)
-            col.label(text=f"min: {mat.volume_hist_vmin:.3g}")
-            col.label(text=f"max: {mat.volume_hist_vmax:.3g}")
-            col.label(text=f"lower 5%: {mat.volume_hist_q05:.3g}")
-            col.label(text=f"upper 5%: {mat.volume_hist_q95:.3g}")
-
-            layout.label(text="Histogram", icon="GRAPH")
             box = layout.box()
+            box.row().label(text="Value ranges", icon="UV_DATA")
+
+            split = box.split()
+            col = split.column(align=True)
+            col.row().label(text="min/max")
+            col.row().label(text=f"min: {mat.volume_hist_vmin:.3g}")
+            col.row().label(text=f"max: {mat.volume_hist_vmax:.3g}")
+            col = split.column(align=True)
+            col.row().label(text="5% quantiles")
+            col.row().label(text=f"min: {mat.volume_hist_q05:.3g}")
+            col.row().label(text=f"max: {mat.volume_hist_q95:.3g}")
+
+            box.row().label(text="Histogram", icon="GRAPH")
             row = box.row()
             row.ui_units_x = 24
-            row.scale_y = 2.0
+            row.scale_x = 10
+            row.scale_y = 10
             icon_id = mat.volume_hist_image.preview.icon_id
-            row.template_icon(icon_value=icon_id, scale=6.0)
+            row.template_icon(icon_value=icon_id)
+            box.row().label(text="Quantiles shown with red lines", icon="INFO")
 
 
 class SciBlend_Tools_3DV_UI(bpy.types.Panel):
@@ -1188,19 +1583,19 @@ class SciBlend_Tools_3DV_UI(bpy.types.Panel):
         layout = self.layout
         props = context.scene.sci_blend_tools
 
-        col = layout.column(align=True)
-
-        col.label(
+        layout.separator()
+        box = layout.box()
+        box.row().label(
             text="Enable CUDA/HIP/OneAPI support in Preferences before proceeding.",
             icon="INFO",
         )
-        col.separator()
-        col.operator("sci_blend.switch_to_cycles", icon="RENDER_STILL")
-        col.operator("sci_blend.fix_colors", icon="COLOR")
+        box.row().operator("sci_blend.switch_to_cycles", icon="RENDER_STILL")
+        box.row().operator("sci_blend.fix_colors", icon="COLOR")
 
-        col.separator()
-        col.prop(props, "background_color")
-        col.operator("sci_blend.tools_set_background", icon="WORLD")
+        layout.separator()
+        box = layout.box()
+        box.row().prop(props, "background_color")
+        box.row().operator("sci_blend.tools_set_background", icon="WORLD")
 
 
 class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
@@ -1213,21 +1608,22 @@ class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
         layout = self.layout
         props = context.scene.sci_blend_volume_render
 
-        col = layout.column(align=True)
-        col.prop(props, "save_relative")
+        layout.prop(props, "save_relative")
 
-        col.separator()
-        col.label(text="VDB → Volume (.vdb)")
-        col.prop(props, "vdb_path")
-        col.operator("sci_blend.volume_render_import_vdb", icon="IMPORT")
+        layout.separator()
 
-        col.separator()
-        col.label(text="NumPy → Volume (.npy / .npz)")
-        col.prop(props, "numpy_path")
-        col.prop(props, "npz_key")
-        row = col.row(align=True)
-        row.prop(props, "numpy_axis_order")
-        col.operator("sci_blend.volume_render_import_numpy", icon="IMPORT")
+        box = layout.box()
+        box.row().label(text="VDB → Volume (.vdb)")
+        box.row().prop(props, "vdb_path")
+        box.row().operator("sci_blend.volume_render_import_vdb", icon="IMPORT")
+
+        layout.separator()
+        box = layout.box()
+        box.row().label(text="NumPy → Volume (.npy / .npz)")
+        box.row().prop(props, "numpy_path")
+        box.row().prop(props, "npz_key")
+        box.row().prop(props, "numpy_axis_order")
+        box.row().operator("sci_blend.volume_render_import_numpy", icon="IMPORT")
 
 
 class SciBlend_Latex_3DV_UI(bpy.types.Panel):
@@ -1241,6 +1637,9 @@ class SciBlend_Latex_3DV_UI(bpy.types.Panel):
         layout = self.layout
         props = context.scene.sci_blend_latex
 
+        layout.label(text="Adapted from ghseeli/latex2blender", icon="INFO")
+        layout.separator()
+
         layout.prop(props, "latex_code")
         layout.separator()
 
@@ -1249,21 +1648,20 @@ class SciBlend_Latex_3DV_UI(bpy.types.Panel):
 
         box = layout.box()
         box.label(text="Paths to directories containing commands.")
-        row = box.row()
-        row.prop(props, "custom_latex_path")
-        row = box.row()
-        row.prop(props, "custom_pdflatex_path")
-        row = box.row()
-        row.prop(props, "custom_xelatex_path")
-        row = box.row()
-        row.prop(props, "custom_lualatex_path")
-        row = box.row()
-        row.prop(props, "custom_dvisvgm_path")
+        box.label(
+            text="If the plugin is unable to find the commands, set them here.",
+            icon="INFO",
+        )
+        box.row().prop(props, "custom_latex_path")
+        box.row().prop(props, "custom_pdflatex_path")
+        box.row().prop(props, "custom_xelatex_path")
+        box.row().prop(props, "custom_lualatex_path")
+        box.row().prop(props, "custom_dvisvgm_path")
 
         box = layout.box()
         box.label(text="Transform Settings")
-        row = box.row()
-        row.prop(props, "text_scale")
+        box.row().prop(props, "text_scale")
+        box.row().prop(props, "text_thickness")
 
         split = box.split()
 
@@ -1289,22 +1687,24 @@ class SciBlend_Latex_3DV_UI(bpy.types.Panel):
 
         layout.separator()
 
-        # box = layout.box()
-        # row = box.row()
-        # row.operator("wm.compile_as_mesh")
-        # row = box.row()
-        # row.operator("wm.compile_as_grease_pencil")
+        box = layout.box()
+        row = box.row()
+        row.operator("sci_blend.latex_compile_as_mesh", icon="MESH_CUBE")
+        row = box.row()
+        row.operator("sci_blend.latex_compile_as_grease_pencil", icon="GREASEPENCIL")
 
 
 # -----------------------------
 classes = (
     # props
     SciBlend_Tools_Props,
-    SciBlend_Latex_Props,
     SciBlend_VolumeRender_Props,
+    SciBlend_Latex_Props,
     # operators
     SciBlend_Materials_ReverseVolumeColormap,
     SciBlend_Materials_CreateOrResetVolumeMaterial,
+    SciBlend_Latex_CompileAsMesh,
+    SciBlend_Latex_CompileAsGreasePencil,
     SciBlend_Tools_FixColors,
     SciBlend_Tools_SwitchToCycles,
     SciBlend_Tools_SetBackground,
@@ -1313,8 +1713,8 @@ classes = (
     # panels
     SciBlend_Material_NDE_UI,
     SciBlend_Tools_3DV_UI,
-    SciBlend_Latex_3DV_UI,
     SciBlend_VolumeRender_3DV_UI,
+    SciBlend_Latex_3DV_UI,
 )
 
 
