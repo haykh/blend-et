@@ -1,8 +1,10 @@
 - [x] vdb import
 - [x] numpy import
 - [x] create volume material + colormap
+- [x] crop volume
 - [x] histogram of volume data
 - [x] add latex text labels
 - [ ] add arrows
 - [ ] add box 
+- [ ] axes ticks
 - [ ] import xyz fields to build fieldlines + seed points

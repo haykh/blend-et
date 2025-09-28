@@ -793,10 +793,10 @@ def _clear_histogram_on_material(mat: bpy.types.Material):
     mat.volume_hist_ready = False
 
 
-def _create_volume_object(context, store_path, abspath):
+def _create_volume_object(context, store_path, abspath, uuid_str):
     scene = context.scene
     display_name = bpy.path.display_name_from_filepath(abspath)
-    base_name = f"{display_name}_Volume"
+    base_name = f"{display_name}_Volume_{uuid_str}"
 
     vol_data = bpy.data.volumes.new(name=base_name)
     vol_data.filepath = store_path
@@ -812,13 +812,21 @@ def _create_volume_object(context, store_path, abspath):
     active_obj.select_set(True)
     context.view_layer.objects.active = active_obj
 
-    mat = _create_or_reset_volume_material(f"{display_name}_Material")
+    mat = _create_or_reset_volume_material(f"{display_name}_Material_{uuid_str}")
     if len(vol_obj.data.materials) == 0:
         vol_obj.data.materials.append(mat)
     else:
         vol_obj.data.materials[0] = mat
 
     return base_name, display_name, mat
+
+
+def _rel_to_abs(sp_name):
+    if bpy.context.scene.sci_blend_latex[sp_name].startswith("//"):
+        abs_path = os.path.abspath(
+            bpy.path.abspath(bpy.context.scene.sci_blend_latex[sp_name])
+        )
+        bpy.context.scene.sci_blend_latex[sp_name] = abs_path
 
 
 # -----------------------------
@@ -842,14 +850,6 @@ def _on_material_colormap_change(self, context):
     return None
 
 
-def rel_to_abs(sp_name):
-    if bpy.context.scene.sci_blend_latex[sp_name].startswith("//"):
-        abs_path = os.path.abspath(
-            bpy.path.abspath(bpy.context.scene.sci_blend_latex[sp_name])
-        )
-        bpy.context.scene.sci_blend_latex[sp_name] = abs_path
-
-
 # -----------------------------
 # Properties
 # -----------------------------
@@ -865,149 +865,13 @@ class SciBlend_Tools_Props(bpy.types.PropertyGroup):
     )
 
 
-class SciBlend_Latex_Props(bpy.types.PropertyGroup):
-    latex_code: bpy.props.StringProperty(
-        name="LaTeX",
-        description="Enter LaTeX code surrounded with $...$",
-        default="",
-    )
-
-    custom_latex_path: bpy.props.StringProperty(
-        name="latex",
-        description="""
-        Enter the path of the folder containing the latex command
-        on your computer. If you are not sure where the latex command is
-        located, open your terminal/command prompt and type: \"where latex\" """,
-        default="",
-        update=lambda s, c: rel_to_abs("custom_latex_path"),
-        subtype="DIR_PATH",
-    )
-
-    custom_pdflatex_path: bpy.props.StringProperty(
-        name="pdflatex",
-        description="""
-        Enter the path of the folder containing the pdflatex command
-        on your computer. If you are not sure where the pdflatex command is
-        located, open your terminal/command prompt and type: \"where pdflatex\" """,
-        default="",
-        update=lambda s, c: rel_to_abs("custom_pdflatex_path"),
-        subtype="DIR_PATH",
-    )
-
-    custom_xelatex_path: bpy.props.StringProperty(
-        name="xelatex",
-        description="""
-        Enter the path of the folder containing the xelatex command
-        on your computer. If you are not sure where the xelatex command is
-        located, open your terminal/command prompt and type: \"where xelatex\" """,
-        default="",
-        update=lambda s, c: rel_to_abs("custom_xelatex_path"),
-        subtype="DIR_PATH",
-    )
-
-    custom_lualatex_path: bpy.props.StringProperty(
-        name="lualatex",
-        description="""
-        Enter the path of the folder containing the lualatex command
-        on your computer. If you are not sure where the lualatex command is
-        located, open your terminal/command prompt and type: \"where lualatex\" """,
-        default="",
-        update=lambda s, c: rel_to_abs("custom_lualatex_path"),
-        subtype="DIR_PATH",
-    )
-
-    custom_dvisvgm_path: bpy.props.StringProperty(
-        name="dvisvgm",
-        description="""
-        Enter the path of the folder containing the dvisvgm command
-        on your computer. If you are not sure where the dvisvgm command is
-        located, open your terminal/command prompt and type: \"where dvisvgm\" """,
-        default="",
-        update=lambda s, c: rel_to_abs("custom_dvisvgm_path"),
-        subtype="DIR_PATH",
-    )
-
-    command_selection: bpy.props.EnumProperty(
-        name="Command",
-        description="Select the command used to compile LaTeX code",
-        items=[
-            ("latex", "latex", "Use latex command to compile code"),
-            ("pdflatex", "pdflatex", "Use pdflatex command to compile code"),
-            ("xelatex", "xelatex", "Use xelatex command to compile code"),
-            ("lualatex", "lualatex", "Use lualatex command to compile code"),
-        ],
-    )
-
-    text_thickness: bpy.props.FloatProperty(
-        name="Thickness",
-        description="Set thickness of text",
-        default=0.025,
-    )
-
-    text_scale: bpy.props.FloatProperty(
-        name="Scale",
-        description="Set size of text",
-        default=1.0,
-    )
-
-    x_loc: bpy.props.FloatProperty(
-        name="X",
-        description="Set x position",
-        default=0.0,
-    )
-
-    y_loc: bpy.props.FloatProperty(
-        name="Y",
-        description="Set y position",
-        default=0.0,
-    )
-
-    z_loc: bpy.props.FloatProperty(
-        name="Z",
-        description="Set z position",
-        default=0.0,
-    )
-
-    x_rot: bpy.props.FloatProperty(
-        name="X",
-        description="Set x rotation",
-        default=0.0,
-    )
-
-    y_rot: bpy.props.FloatProperty(
-        name="Y",
-        description="Set y rotation",
-        default=0.0,
-    )
-
-    z_rot: bpy.props.FloatProperty(
-        name="Z",
-        description="Set z rotation",
-        default=0.0,
-    )
-
-    custom_material_bool: bpy.props.BoolProperty(
-        name="Use Custom Material", description="Use a custom material", default=False
-    )
-
-    custom_material_value: bpy.props.PointerProperty(
-        type=bpy.types.Material, name="Material", description="Choose a material"
-    )
-
-    custom_preamble_bool: bpy.props.BoolProperty(
-        name="Use Custom Preamble", description="Use a custom preamble", default=False
-    )
-
-    preamble_path: bpy.props.StringProperty(
-        name="Preamble",
-        description="Choose a .tex file for the preamble",
-        default="",
-        update=lambda s, c: rel_to_abs("preamble_path"),
-        subtype="FILE_PATH",
-    )
-
-
 class SciBlend_VolumeRender_Props(bpy.types.PropertyGroup):
+    static_uuid: bpy.props.IntProperty(
+        name="Static UUID",
+        description="Static part of the UUID for the volume object",
+        default=0,
+    )
+
     vdb_path: bpy.props.StringProperty(
         name=".vdb",
         description="Path to .vdb file for volume rendering",
@@ -1040,6 +904,36 @@ class SciBlend_VolumeRender_Props(bpy.types.PropertyGroup):
             ("YXZ", "YXZ", "Array is (Y, X, Z)"),
         ],
         default="ZYX",
+    )
+    numpy_crop_xmin: bpy.props.IntProperty(
+        name="X min",
+        description="Crop array: minimum X index (inclusive)",
+        default=0,
+    )
+    numpy_crop_xmax: bpy.props.IntProperty(
+        name="X max",
+        description="Crop array: maximum X index (exclusive)",
+        default=-1,
+    )
+    numpy_crop_ymin: bpy.props.IntProperty(
+        name="Y min",
+        description="Crop array: minimum Y index (inclusive)",
+        default=0,
+    )
+    numpy_crop_ymax: bpy.props.IntProperty(
+        name="Y max",
+        description="Crop array: maximum Y index (exclusive)",
+        default=-1,
+    )
+    numpy_crop_zmin: bpy.props.IntProperty(
+        name="Z min",
+        description="Crop array: minimum Z index (inclusive)",
+        default=0,
+    )
+    numpy_crop_zmax: bpy.props.IntProperty(
+        name="Z max",
+        description="Crop array: maximum Z index (exclusive)",
+        default=-1,
     )
 
 
@@ -1128,6 +1022,148 @@ class SciBlend_Material_Props:
             del bpy.types.Material.volume_colormap_reversed
         if hasattr(bpy.types.Material, "volume_colormap"):
             del bpy.types.Material.volume_colormap
+
+
+class SciBlend_Latex_Props(bpy.types.PropertyGroup):
+    latex_code: bpy.props.StringProperty(
+        name="LaTeX",
+        description="Enter LaTeX code surrounded with $...$",
+        default="",
+    )
+
+    custom_latex_path: bpy.props.StringProperty(
+        name="latex",
+        description="""
+        Enter the path of the folder containing the latex command
+        on your computer. If you are not sure where the latex command is
+        located, open your terminal/command prompt and type: \"where latex\" """,
+        default="",
+        update=lambda s, c: _rel_to_abs("custom_latex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_pdflatex_path: bpy.props.StringProperty(
+        name="pdflatex",
+        description="""
+        Enter the path of the folder containing the pdflatex command
+        on your computer. If you are not sure where the pdflatex command is
+        located, open your terminal/command prompt and type: \"where pdflatex\" """,
+        default="",
+        update=lambda s, c: _rel_to_abs("custom_pdflatex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_xelatex_path: bpy.props.StringProperty(
+        name="xelatex",
+        description="""
+        Enter the path of the folder containing the xelatex command
+        on your computer. If you are not sure where the xelatex command is
+        located, open your terminal/command prompt and type: \"where xelatex\" """,
+        default="",
+        update=lambda s, c: _rel_to_abs("custom_xelatex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_lualatex_path: bpy.props.StringProperty(
+        name="lualatex",
+        description="""
+        Enter the path of the folder containing the lualatex command
+        on your computer. If you are not sure where the lualatex command is
+        located, open your terminal/command prompt and type: \"where lualatex\" """,
+        default="",
+        update=lambda s, c: _rel_to_abs("custom_lualatex_path"),
+        subtype="DIR_PATH",
+    )
+
+    custom_dvisvgm_path: bpy.props.StringProperty(
+        name="dvisvgm",
+        description="""
+        Enter the path of the folder containing the dvisvgm command
+        on your computer. If you are not sure where the dvisvgm command is
+        located, open your terminal/command prompt and type: \"where dvisvgm\" """,
+        default="",
+        update=lambda s, c: _rel_to_abs("custom_dvisvgm_path"),
+        subtype="DIR_PATH",
+    )
+
+    command_selection: bpy.props.EnumProperty(
+        name="Command",
+        description="Select the command used to compile LaTeX code",
+        items=[
+            ("latex", "latex", "Use latex command to compile code"),
+            ("pdflatex", "pdflatex", "Use pdflatex command to compile code"),
+            ("xelatex", "xelatex", "Use xelatex command to compile code"),
+            ("lualatex", "lualatex", "Use lualatex command to compile code"),
+        ],
+    )
+
+    text_thickness: bpy.props.FloatProperty(
+        name="Thickness",
+        description="Set thickness of text",
+        default=0.025,
+    )
+
+    text_scale: bpy.props.FloatProperty(
+        name="Scale",
+        description="Set size of text",
+        default=1.0,
+    )
+
+    x_loc: bpy.props.FloatProperty(
+        name="X",
+        description="Set x position",
+        default=0.0,
+    )
+
+    y_loc: bpy.props.FloatProperty(
+        name="Y",
+        description="Set y position",
+        default=0.0,
+    )
+
+    z_loc: bpy.props.FloatProperty(
+        name="Z",
+        description="Set z position",
+        default=0.0,
+    )
+
+    x_rot: bpy.props.FloatProperty(
+        name="X",
+        description="Set x rotation",
+        default=0.0,
+    )
+
+    y_rot: bpy.props.FloatProperty(
+        name="Y",
+        description="Set y rotation",
+        default=0.0,
+    )
+
+    z_rot: bpy.props.FloatProperty(
+        name="Z",
+        description="Set z rotation",
+        default=0.0,
+    )
+
+    custom_material_bool: bpy.props.BoolProperty(
+        name="Use Custom Material", description="Use a custom material", default=False
+    )
+
+    custom_material_value: bpy.props.PointerProperty(
+        type=bpy.types.Material, name="Material", description="Choose a material"
+    )
+
+    custom_preamble_bool: bpy.props.BoolProperty(
+        name="Use Custom Preamble", description="Use a custom preamble", default=False
+    )
+
+    preamble_path: bpy.props.StringProperty(
+        name="Preamble",
+        description="Choose a .tex file for the preamble",
+        default="",
+        update=lambda s, c: _rel_to_abs("preamble_path"),
+        subtype="FILE_PATH",
+    )
 
 
 # -----------------------------
@@ -1319,7 +1355,9 @@ class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
             return {"CANCELLED"}
 
         store_path = bpy.path.relpath(abspath) if props.save_relative else abspath
-        _, display_name, mat = _create_volume_object(context, store_path, abspath)
+        uuid_str = f"{props.static_uuid:04d}"
+        props.static_uuid += 1
+        _, display_name, mat = _create_volume_object(context, store_path, abspath, uuid_str)
 
         if mat is not None:
             _clear_histogram_on_material(mat)
@@ -1404,6 +1442,25 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
             self.report({"ERROR"}, f"Array must be 3D (got shape {arr.shape})")
             return {"CANCELLED"}
 
+        # crop
+        zmin = props.numpy_crop_zmin
+        zmax = props.numpy_crop_zmax
+        ymin = props.numpy_crop_ymin
+        ymax = props.numpy_crop_ymax
+        xmin = props.numpy_crop_xmin
+        xmax = props.numpy_crop_xmax
+        self.report(
+            {"INFO"}, f"Cropping to Z[{zmin}:{zmax}] Y[{ymin}:{ymax}] X[{xmin}:{xmax}]"
+        )
+        try:
+            arr = arr[xmin:xmax, ymin:ymax, zmin:zmax]
+        except Exception as e:
+            self.report({"ERROR"}, f"Invalid crop indices: {e}")
+            return {"CANCELLED"}
+        if arr.size == 0:
+            self.report({"ERROR"}, "Cropped array is empty.")
+            return {"CANCELLED"}
+
         order_map = {
             "ZYX": (0, 1, 2),
             "XYZ": (2, 1, 0),
@@ -1436,6 +1493,8 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
         grid.copyFromArray(arr)
 
         # Output file under same directory in 'sciblend_cache'
+        uuid_str = f"{props.static_uuid:04d}"
+        props.static_uuid += 1
         blend_dir = (
             directory if os.path.isabs(path) else os.path.dirname(bpy.data.filepath)
         )
@@ -1447,7 +1506,7 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
                 base += f"_{props.npz_key.strip()}"
         else:
             base = os.path.splitext(os.path.basename(path))[0]
-        vdb_path = os.path.join(cache_dir, f"{base}.vdb")
+        vdb_path = os.path.join(cache_dir, f"{base}_{uuid_str}.vdb")
         try:
             vdb.write(vdb_path, grids=[grid])
         except Exception as e:
@@ -1455,7 +1514,9 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
             return {"CANCELLED"}
 
         store_path = bpy.path.relpath(vdb_path) if props.save_relative else vdb_path
-        vol_name, _, mat = _create_volume_object(context, store_path, vdb_path)
+        vol_name, _, mat = _create_volume_object(
+            context, store_path, vdb_path, uuid_str
+        )
 
         if mat is not None:
             _store_histogram_on_material(mat, _hist, _vmin, _vmax, _q05, _q95)
@@ -1623,6 +1684,20 @@ class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
         box.row().prop(props, "numpy_path")
         box.row().prop(props, "npz_key")
         box.row().prop(props, "numpy_axis_order")
+        box_crop = box.box()
+        box_crop.label(text="Crop indices")
+        row = box_crop.row()
+        split = row.split()
+        split.column().prop(props, "numpy_crop_xmin")
+        split.column().prop(props, "numpy_crop_xmax")
+        row = box_crop.row()
+        split = row.split()
+        split.column().prop(props, "numpy_crop_ymin")
+        split.column().prop(props, "numpy_crop_ymax")
+        row = box_crop.row()
+        split = row.split()
+        split.column().prop(props, "numpy_crop_zmin")
+        split.column().prop(props, "numpy_crop_zmax")
         box.row().operator("sci_blend.volume_render_import_numpy", icon="IMPORT")
 
 
