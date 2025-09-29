@@ -866,9 +866,9 @@ class SciBlend_Tools_Props(bpy.types.PropertyGroup):
 
 
 class SciBlend_VolumeRender_Props(bpy.types.PropertyGroup):
-    static_uuid: bpy.props.IntProperty(
-        name="Static UUID",
-        description="Static part of the UUID for the volume object",
+    uuid: bpy.props.IntProperty(
+        name="UUID",
+        description="UUID for the volume object",
         default=0,
     )
 
@@ -936,93 +936,12 @@ class SciBlend_VolumeRender_Props(bpy.types.PropertyGroup):
         default=-1,
     )
 
-
-class SciBlend_Material_Props:
-    @staticmethod
-    def register():
-        if hasattr(bpy.types.Material, "volume_colormap"):
-            del bpy.types.Material.volume_colormap
-        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
-            del bpy.types.Material.volume_colormap_reversed
-        if hasattr(bpy.types.Material, "volume_hist_vmin"):
-            del bpy.types.Material.volume_hist_vmin
-        if hasattr(bpy.types.Material, "volume_hist_vmax"):
-            del bpy.types.Material.volume_hist_vmax
-        if hasattr(bpy.types.Material, "volume_hist_q05"):
-            del bpy.types.Material.volume_hist_q05
-        if hasattr(bpy.types.Material, "volume_hist_q95"):
-            del bpy.types.Material.volume_hist_q95
-        if hasattr(bpy.types.Material, "volume_hist_image"):
-            del bpy.types.Material.volume_hist_image
-        if hasattr(bpy.types.Material, "volume_hist_ready"):
-            del bpy.types.Material.volume_hist_ready
-        bpy.types.Material.volume_colormap = bpy.props.EnumProperty(
-            name="Colormap",
-            description="Colormap for the volume material",
-            items=enum_colormap_items,
-            default=0,
-            update=_on_material_colormap_change,
-        )
-        bpy.types.Material.volume_colormap_reversed = bpy.props.BoolProperty(
-            name="Reverse colormap",
-            description="Reverse the selected colormap (like Matplotlib _r)",
-            default=False,
-            update=_on_material_colormap_change,
-        )
-        bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
-            name="Min value",
-            description="Smallest value of imported NumPy data",
-            default=0.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_vmax = bpy.props.FloatProperty(
-            name="Max value",
-            description="Largest value of imported NumPy data",
-            default=1.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_q05 = bpy.props.FloatProperty(
-            name="5% lows",
-            description="Smallest 5% of imported NumPy data",
-            default=0.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_q95 = bpy.props.FloatProperty(
-            name="5% highs",
-            description="Largest 5% of imported NumPy data",
-            default=1.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_image = bpy.props.PointerProperty(
-            name="Histogram",
-            type=bpy.types.Image,
-            description="Histogram preview image",
-        )
-        bpy.types.Material.volume_hist_ready = bpy.props.BoolProperty(
-            name="Histogram Ready",
-            description="True if histogram comes from NumPy import",
-            default=False,
-        )
-
-    @staticmethod
-    def unregister():
-        if hasattr(bpy.types.Material, "volume_hist_ready"):
-            del bpy.types.Material.volume_hist_ready
-        if hasattr(bpy.types.Material, "volume_hist_image"):
-            del bpy.types.Material.volume_hist_image
-        if hasattr(bpy.types.Material, "volume_hist_q95"):
-            del bpy.types.Material.volume_hist_q95
-        if hasattr(bpy.types.Material, "volume_hist_q05"):
-            del bpy.types.Material.volume_hist_q05
-        if hasattr(bpy.types.Material, "volume_hist_vmax"):
-            del bpy.types.Material.volume_hist_vmax
-        if hasattr(bpy.types.Material, "volume_hist_vmin"):
-            del bpy.types.Material.volume_hist_vmin
-        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
-            del bpy.types.Material.volume_colormap_reversed
-        if hasattr(bpy.types.Material, "volume_colormap"):
-            del bpy.types.Material.volume_colormap
-
+class SciBlend_Annotations_Props(bpy.types.PropertyGroup):
+    uuid: bpy.props.IntProperty(
+        name="UUID",
+        description="UUID for the annotation object",
+        default=0,
+    )
 
 class SciBlend_Latex_Props(bpy.types.PropertyGroup):
     latex_code: bpy.props.StringProperty(
@@ -1164,6 +1083,93 @@ class SciBlend_Latex_Props(bpy.types.PropertyGroup):
         update=lambda s, c: _rel_to_abs("preamble_path"),
         subtype="FILE_PATH",
     )
+
+
+class SciBlend_Material_Props:
+    @staticmethod
+    def register():
+        if hasattr(bpy.types.Material, "volume_colormap"):
+            del bpy.types.Material.volume_colormap
+        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
+            del bpy.types.Material.volume_colormap_reversed
+        if hasattr(bpy.types.Material, "volume_hist_vmin"):
+            del bpy.types.Material.volume_hist_vmin
+        if hasattr(bpy.types.Material, "volume_hist_vmax"):
+            del bpy.types.Material.volume_hist_vmax
+        if hasattr(bpy.types.Material, "volume_hist_q05"):
+            del bpy.types.Material.volume_hist_q05
+        if hasattr(bpy.types.Material, "volume_hist_q95"):
+            del bpy.types.Material.volume_hist_q95
+        if hasattr(bpy.types.Material, "volume_hist_image"):
+            del bpy.types.Material.volume_hist_image
+        if hasattr(bpy.types.Material, "volume_hist_ready"):
+            del bpy.types.Material.volume_hist_ready
+        bpy.types.Material.volume_colormap = bpy.props.EnumProperty(
+            name="Colormap",
+            description="Colormap for the volume material",
+            items=enum_colormap_items,
+            default=0,
+            update=_on_material_colormap_change,
+        )
+        bpy.types.Material.volume_colormap_reversed = bpy.props.BoolProperty(
+            name="Reverse colormap",
+            description="Reverse the selected colormap (like Matplotlib _r)",
+            default=False,
+            update=_on_material_colormap_change,
+        )
+        bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
+            name="Min value",
+            description="Smallest value of imported NumPy data",
+            default=0.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_vmax = bpy.props.FloatProperty(
+            name="Max value",
+            description="Largest value of imported NumPy data",
+            default=1.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_q05 = bpy.props.FloatProperty(
+            name="5% lows",
+            description="Smallest 5% of imported NumPy data",
+            default=0.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_q95 = bpy.props.FloatProperty(
+            name="5% highs",
+            description="Largest 5% of imported NumPy data",
+            default=1.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_image = bpy.props.PointerProperty(
+            name="Histogram",
+            type=bpy.types.Image,
+            description="Histogram preview image",
+        )
+        bpy.types.Material.volume_hist_ready = bpy.props.BoolProperty(
+            name="Histogram Ready",
+            description="True if histogram comes from NumPy import",
+            default=False,
+        )
+
+    @staticmethod
+    def unregister():
+        if hasattr(bpy.types.Material, "volume_hist_ready"):
+            del bpy.types.Material.volume_hist_ready
+        if hasattr(bpy.types.Material, "volume_hist_image"):
+            del bpy.types.Material.volume_hist_image
+        if hasattr(bpy.types.Material, "volume_hist_q95"):
+            del bpy.types.Material.volume_hist_q95
+        if hasattr(bpy.types.Material, "volume_hist_q05"):
+            del bpy.types.Material.volume_hist_q05
+        if hasattr(bpy.types.Material, "volume_hist_vmax"):
+            del bpy.types.Material.volume_hist_vmax
+        if hasattr(bpy.types.Material, "volume_hist_vmin"):
+            del bpy.types.Material.volume_hist_vmin
+        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
+            del bpy.types.Material.volume_colormap_reversed
+        if hasattr(bpy.types.Material, "volume_colormap"):
+            del bpy.types.Material.volume_colormap
 
 
 # -----------------------------
@@ -1355,8 +1361,8 @@ class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
             return {"CANCELLED"}
 
         store_path = bpy.path.relpath(abspath) if props.save_relative else abspath
-        uuid_str = f"{props.static_uuid:04d}"
-        props.static_uuid += 1
+        uuid_str = f"{props.uuid:04d}"
+        props.uuid += 1
         _, display_name, mat = _create_volume_object(context, store_path, abspath, uuid_str)
 
         if mat is not None:
@@ -1493,8 +1499,8 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
         grid.copyFromArray(arr)
 
         # Output file under same directory in 'sciblend_cache'
-        uuid_str = f"{props.static_uuid:04d}"
-        props.static_uuid += 1
+        uuid_str = f"{props.uuid:04d}"
+        props.uuid += 1
         blend_dir = (
             directory if os.path.isabs(path) else os.path.dirname(bpy.data.filepath)
         )
