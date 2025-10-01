@@ -1,5 +1,3 @@
-from .reload import dev_refresh
-
 bl_info = {
     "name": "BlendET",
     "author": "hayk",
@@ -10,21 +8,15 @@ bl_info = {
     "category": "Object",
 }
 
-from . import tools, annotations, volume, latex
+from .dev import RegisterAll, UnregisterAll
 
 
 def register():
-    tools.register()
-    annotations.register()
-    volume.register()
-    latex.register()
+    RegisterAll()
 
 
 def unregister():
-    latex.unregister()
-    volume.unregister()
-    annotations.unregister()
-    tools.unregister()
+    UnregisterAll()
 
 
 if __name__ == "__main__":
