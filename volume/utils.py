@@ -1,4 +1,5 @@
 import bpy  # type: ignore
+import bpy.utils.previews # type: ignore
 
 import numpy as np  # type: ignore
 
