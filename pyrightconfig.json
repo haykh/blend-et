@@ -1,3 +1,4 @@
 {
-  "reportInvalidTypeForm": false
+  "reportInvalidTypeForm": false,
+  "typeCheckingMode": "basic",
 }

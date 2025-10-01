@@ -1,9 +1,9 @@
 bl_info = {
-    "name": "SciBlend",
+    "name": "BlendET",
     "author": "hayk",
     "version": (0, 1, 0),
     "blender": (4, 5, 0),
-    "location": "N panel > SciBlend",
+    "location": "N panel > BlendET",
     "description": "Collection of tools for scientific visualization and rendering.",
     "category": "Object",
 }
@@ -13,6 +13,7 @@ bl_info = {
 # github link: https://github.com/ghseeli/latex2blender
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+import uuid
 import bpy  # type: ignore
 import bpy.utils.previews  # type: ignore
 import numpy as np  # type: ignore
@@ -822,11 +823,11 @@ def _create_volume_object(context, store_path, abspath, uuid_str):
 
 
 def _rel_to_abs(sp_name):
-    if bpy.context.scene.sci_blend_latex[sp_name].startswith("//"):
+    if bpy.context.scene.blend_et_latex[sp_name].startswith("//"):
         abs_path = os.path.abspath(
-            bpy.path.abspath(bpy.context.scene.sci_blend_latex[sp_name])
+            bpy.path.abspath(bpy.context.scene.blend_et_latex[sp_name])
         )
-        bpy.context.scene.sci_blend_latex[sp_name] = abs_path
+        bpy.context.scene.blend_et_latex[sp_name] = abs_path
 
 
 # -----------------------------
@@ -853,7 +854,7 @@ def _on_material_colormap_change(self, context):
 # -----------------------------
 # Properties
 # -----------------------------
-class SciBlend_Tools_Props(bpy.types.PropertyGroup):
+class BlendET_Tools_Props(bpy.types.PropertyGroup):
     background_color: bpy.props.FloatVectorProperty(
         name="Background color",
         description="Background color for the scene",
@@ -865,7 +866,15 @@ class SciBlend_Tools_Props(bpy.types.PropertyGroup):
     )
 
 
-class SciBlend_VolumeRender_Props(bpy.types.PropertyGroup):
+class BlendET_Annotations_Props(bpy.types.PropertyGroup):
+    uuid: bpy.props.IntProperty(
+        name="UUID",
+        description="UUID for the annotation object",
+        default=0,
+    )
+
+
+class BlendET_VolumeRender_Props(bpy.types.PropertyGroup):
     uuid: bpy.props.IntProperty(
         name="UUID",
         description="UUID for the volume object",
@@ -936,14 +945,95 @@ class SciBlend_VolumeRender_Props(bpy.types.PropertyGroup):
         default=-1,
     )
 
-class SciBlend_Annotations_Props(bpy.types.PropertyGroup):
-    uuid: bpy.props.IntProperty(
-        name="UUID",
-        description="UUID for the annotation object",
-        default=0,
-    )
 
-class SciBlend_Latex_Props(bpy.types.PropertyGroup):
+class BlendET_Material_Props:
+    @staticmethod
+    def register():
+        if hasattr(bpy.types.Material, "volume_colormap"):
+            del bpy.types.Material.volume_colormap
+        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
+            del bpy.types.Material.volume_colormap_reversed
+        if hasattr(bpy.types.Material, "volume_hist_vmin"):
+            del bpy.types.Material.volume_hist_vmin
+        if hasattr(bpy.types.Material, "volume_hist_vmax"):
+            del bpy.types.Material.volume_hist_vmax
+        if hasattr(bpy.types.Material, "volume_hist_q05"):
+            del bpy.types.Material.volume_hist_q05
+        if hasattr(bpy.types.Material, "volume_hist_q95"):
+            del bpy.types.Material.volume_hist_q95
+        if hasattr(bpy.types.Material, "volume_hist_image"):
+            del bpy.types.Material.volume_hist_image
+        if hasattr(bpy.types.Material, "volume_hist_ready"):
+            del bpy.types.Material.volume_hist_ready
+        bpy.types.Material.volume_colormap = bpy.props.EnumProperty(
+            name="Colormap",
+            description="Colormap for the volume material",
+            items=enum_colormap_items,
+            default=0,
+            update=_on_material_colormap_change,
+        )
+        bpy.types.Material.volume_colormap_reversed = bpy.props.BoolProperty(
+            name="Reverse colormap",
+            description="Reverse the selected colormap (like Matplotlib _r)",
+            default=False,
+            update=_on_material_colormap_change,
+        )
+        bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
+            name="Min value",
+            description="Smallest value of imported NumPy data",
+            default=0.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_vmax = bpy.props.FloatProperty(
+            name="Max value",
+            description="Largest value of imported NumPy data",
+            default=1.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_q05 = bpy.props.FloatProperty(
+            name="5% lows",
+            description="Smallest 5% of imported NumPy data",
+            default=0.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_q95 = bpy.props.FloatProperty(
+            name="5% highs",
+            description="Largest 5% of imported NumPy data",
+            default=1.0,
+            precision=6,
+        )
+        bpy.types.Material.volume_hist_image = bpy.props.PointerProperty(
+            name="Histogram",
+            type=bpy.types.Image,
+            description="Histogram preview image",
+        )
+        bpy.types.Material.volume_hist_ready = bpy.props.BoolProperty(
+            name="Histogram Ready",
+            description="True if histogram comes from NumPy import",
+            default=False,
+        )
+
+    @staticmethod
+    def unregister():
+        if hasattr(bpy.types.Material, "volume_hist_ready"):
+            del bpy.types.Material.volume_hist_ready
+        if hasattr(bpy.types.Material, "volume_hist_image"):
+            del bpy.types.Material.volume_hist_image
+        if hasattr(bpy.types.Material, "volume_hist_q95"):
+            del bpy.types.Material.volume_hist_q95
+        if hasattr(bpy.types.Material, "volume_hist_q05"):
+            del bpy.types.Material.volume_hist_q05
+        if hasattr(bpy.types.Material, "volume_hist_vmax"):
+            del bpy.types.Material.volume_hist_vmax
+        if hasattr(bpy.types.Material, "volume_hist_vmin"):
+            del bpy.types.Material.volume_hist_vmin
+        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
+            del bpy.types.Material.volume_colormap_reversed
+        if hasattr(bpy.types.Material, "volume_colormap"):
+            del bpy.types.Material.volume_colormap
+
+
+class BlendET_Latex_Props(bpy.types.PropertyGroup):
     latex_code: bpy.props.StringProperty(
         name="LaTeX",
         description="Enter LaTeX code surrounded with $...$",
@@ -1085,98 +1175,11 @@ class SciBlend_Latex_Props(bpy.types.PropertyGroup):
     )
 
 
-class SciBlend_Material_Props:
-    @staticmethod
-    def register():
-        if hasattr(bpy.types.Material, "volume_colormap"):
-            del bpy.types.Material.volume_colormap
-        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
-            del bpy.types.Material.volume_colormap_reversed
-        if hasattr(bpy.types.Material, "volume_hist_vmin"):
-            del bpy.types.Material.volume_hist_vmin
-        if hasattr(bpy.types.Material, "volume_hist_vmax"):
-            del bpy.types.Material.volume_hist_vmax
-        if hasattr(bpy.types.Material, "volume_hist_q05"):
-            del bpy.types.Material.volume_hist_q05
-        if hasattr(bpy.types.Material, "volume_hist_q95"):
-            del bpy.types.Material.volume_hist_q95
-        if hasattr(bpy.types.Material, "volume_hist_image"):
-            del bpy.types.Material.volume_hist_image
-        if hasattr(bpy.types.Material, "volume_hist_ready"):
-            del bpy.types.Material.volume_hist_ready
-        bpy.types.Material.volume_colormap = bpy.props.EnumProperty(
-            name="Colormap",
-            description="Colormap for the volume material",
-            items=enum_colormap_items,
-            default=0,
-            update=_on_material_colormap_change,
-        )
-        bpy.types.Material.volume_colormap_reversed = bpy.props.BoolProperty(
-            name="Reverse colormap",
-            description="Reverse the selected colormap (like Matplotlib _r)",
-            default=False,
-            update=_on_material_colormap_change,
-        )
-        bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
-            name="Min value",
-            description="Smallest value of imported NumPy data",
-            default=0.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_vmax = bpy.props.FloatProperty(
-            name="Max value",
-            description="Largest value of imported NumPy data",
-            default=1.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_q05 = bpy.props.FloatProperty(
-            name="5% lows",
-            description="Smallest 5% of imported NumPy data",
-            default=0.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_q95 = bpy.props.FloatProperty(
-            name="5% highs",
-            description="Largest 5% of imported NumPy data",
-            default=1.0,
-            precision=6,
-        )
-        bpy.types.Material.volume_hist_image = bpy.props.PointerProperty(
-            name="Histogram",
-            type=bpy.types.Image,
-            description="Histogram preview image",
-        )
-        bpy.types.Material.volume_hist_ready = bpy.props.BoolProperty(
-            name="Histogram Ready",
-            description="True if histogram comes from NumPy import",
-            default=False,
-        )
-
-    @staticmethod
-    def unregister():
-        if hasattr(bpy.types.Material, "volume_hist_ready"):
-            del bpy.types.Material.volume_hist_ready
-        if hasattr(bpy.types.Material, "volume_hist_image"):
-            del bpy.types.Material.volume_hist_image
-        if hasattr(bpy.types.Material, "volume_hist_q95"):
-            del bpy.types.Material.volume_hist_q95
-        if hasattr(bpy.types.Material, "volume_hist_q05"):
-            del bpy.types.Material.volume_hist_q05
-        if hasattr(bpy.types.Material, "volume_hist_vmax"):
-            del bpy.types.Material.volume_hist_vmax
-        if hasattr(bpy.types.Material, "volume_hist_vmin"):
-            del bpy.types.Material.volume_hist_vmin
-        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
-            del bpy.types.Material.volume_colormap_reversed
-        if hasattr(bpy.types.Material, "volume_colormap"):
-            del bpy.types.Material.volume_colormap
-
-
 # -----------------------------
 # Operators
 # -----------------------------
-class SciBlend_Tools_SwitchToCycles(bpy.types.Operator):
-    bl_idname = "sci_blend.switch_to_cycles"
+class BlendET_Tools_SwitchToCycles(bpy.types.Operator):
+    bl_idname = "blend_et.switch_to_cycles"
     bl_label = "Switch to Cycles"
     bl_description = "Switch render engine to Cycles"
     bl_options = {"REGISTER", "UNDO"}
@@ -1191,8 +1194,8 @@ class SciBlend_Tools_SwitchToCycles(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SciBlend_Tools_FixColors(bpy.types.Operator):
-    bl_idname = "sci_blend.fix_colors"
+class BlendET_Tools_FixColors(bpy.types.Operator):
+    bl_idname = "blend_et.fix_colors"
     bl_label = "Fix Colors"
     bl_description = "Fix color management settings for scientific visualization"
     bl_options = {"REGISTER", "UNDO"}
@@ -1203,14 +1206,14 @@ class SciBlend_Tools_FixColors(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SciBlend_Tools_SetBackground(bpy.types.Operator):
-    bl_idname = "sci_blend.tools_set_background"
+class BlendET_Tools_SetBackground(bpy.types.Operator):
+    bl_idname = "blend_et.tools_set_background"
     bl_label = "Set Background Color"
     bl_description = "Set background color for the scene"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        props = context.scene.sci_blend_tools
+        props = context.scene.blend_et_tools
         color = props.background_color
         world = bpy.context.scene.world
         if world is None:
@@ -1222,134 +1225,28 @@ class SciBlend_Tools_SetBackground(bpy.types.Operator):
             bg_node.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
         return {"FINISHED"}
 
-
-class SciBlend_Latex_CompileAsMesh(bpy.types.Operator):
-    bl_idname = "sci_blend.latex_compile_as_mesh"
-    bl_label = "Compile LaTeX as mesh"
-
+class BlendET_Annotations_AddAxesCube(bpy.types.Operator):
+    bl_idname = "blend_et.annotations_add_axes_cube"
+    bl_label = "Add axes grid cube"
+    bl_description = "Add a customizable mesh for representing the axes of the grid"
+    bl_options = {"REGISTER", "UNDO"}
+    
     def execute(self, context):
-        props = context.scene.sci_blend_latex
-        if (
-            props.latex_code == ""
-            and props.custom_preamble_bool
-            and props.preamble_path == ""
-        ):
-            self.report(
-                {"ERROR"},
-                "No LaTeX code has been entered and no preamble file has been chosen. "
-                "Please enter some LaTeX code and choose a .tex file for the preamble",
-            )
-        elif props.custom_material_bool and props.custom_material_value is None:
-            self.report(
-                {"ERROR"}, "No material has been chosen. Please choose a material."
-            )
-        elif props.latex_code == "":
-            self.report(
-                {"ERROR"},
-                "No LaTeX code has been entered. Please enter some LaTeX code.",
-            )
-        elif props.custom_preamble_bool and props.preamble_path == "":
-            self.report(
-                {"ERROR"}, "No preamble file has been chosen. Please choose a file."
-            )
-        else:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                _compile_with_latex(
-                    self,
-                    context,
-                    props.latex_code,
-                    props.custom_latex_path,
-                    props.custom_pdflatex_path,
-                    props.custom_xelatex_path,
-                    props.custom_lualatex_path,
-                    props.custom_dvisvgm_path,
-                    props.command_selection,
-                    props.text_scale,
-                    props.text_thickness,
-                    props.x_loc,
-                    props.y_loc,
-                    props.z_loc,
-                    props.x_rot,
-                    props.y_rot,
-                    props.z_rot,
-                    props.custom_preamble_bool,
-                    temp_dir,
-                    props.custom_material_bool,
-                    props.custom_material_value,
-                    "mesh",
-                    props.preamble_path,
-                )
+        props = context.scene.blend_et_annotations
+        uuid_str = f"{props.uuid:04d}"
+        props.uuid += 1
         return {"FINISHED"}
 
 
-class SciBlend_Latex_CompileAsGreasePencil(bpy.types.Operator):
-    bl_idname = "sci_blend.latex_compile_as_grease_pencil"
-    bl_label = "Compile LaTeX as grease pencil"
-
-    def execute(self, context):
-        props = context.scene.sci_blend_latex
-        if (
-            props.latex_code == ""
-            and props.custom_preamble_bool
-            and props.preamble_path == ""
-        ):
-            self.report(
-                {"ERROR"},
-                "No LaTeX code has been entered and no preamble file has been chosen. Please enter some "
-                "LaTeX code and choose a .tex file for the preamble",
-            )
-        elif props.custom_material_bool and props.custom_material_value is None:
-            self.report(
-                {"ERROR"}, "No material has been chosen. Please choose a material."
-            )
-        elif props.latex_code == "":
-            self.report(
-                {"ERROR"},
-                "No LaTeX code has been entered. Please enter some LaTeX code.",
-            )
-        elif props.custom_preamble_bool and props.preamble_path == "":
-            self.report(
-                {"ERROR"}, "No preamble file has been chosen. Please choose a file."
-            )
-        else:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                _compile_with_latex(
-                    self,
-                    context,
-                    props.latex_code,
-                    props.custom_latex_path,
-                    props.custom_pdflatex_path,
-                    props.custom_xelatex_path,
-                    props.custom_lualatex_path,
-                    props.custom_dvisvgm_path,
-                    props.command_selection,
-                    props.text_scale,
-                    props.text_thickness,
-                    props.x_loc,
-                    props.y_loc,
-                    props.z_loc,
-                    props.x_rot,
-                    props.y_rot,
-                    props.z_rot,
-                    props.custom_preamble_bool,
-                    temp_dir,
-                    props.custom_material_bool,
-                    props.custom_material_value,
-                    "grease pencil",
-                    props.preamble_path,
-                )
-        return {"FINISHED"}
-
-
-class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
-    bl_idname = "sci_blend.volume_render_import_vdb"
+class BlendET_VolumeRender_ImportVDB(bpy.types.Operator):
+    bl_idname = "blend_et.volume_render_import_vdb"
     bl_label = "Import .vdb as volume"
     bl_description = "Import a .vdb file and create a volume object"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
         scn = context.scene
-        props = scn.sci_blend_volume_render
+        props = scn.blend_et_volume_render
 
         if not props.vdb_path:
             self.report({"ERROR"}, "Please pick a valid .vdb file first.")
@@ -1363,7 +1260,9 @@ class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
         store_path = bpy.path.relpath(abspath) if props.save_relative else abspath
         uuid_str = f"{props.uuid:04d}"
         props.uuid += 1
-        _, display_name, mat = _create_volume_object(context, store_path, abspath, uuid_str)
+        _, display_name, mat = _create_volume_object(
+            context, store_path, abspath, uuid_str
+        )
 
         if mat is not None:
             _clear_histogram_on_material(mat)
@@ -1372,8 +1271,8 @@ class SciBlend_VolumeRender_ImportVDB(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
-    bl_idname = "sci_blend.volume_render_import_numpy"
+class BlendET_VolumeRender_ImportNumpy(bpy.types.Operator):
+    bl_idname = "blend_et.volume_render_import_numpy"
     bl_label = "Import .npy/.npz as volume"
     bl_description = (
         "Load a 3D NumPy array (.npy/.npz) and create a Volume object via OpenVDB"
@@ -1410,7 +1309,7 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
             q05, q95 = bns[imin], bns[imax]
             return cnt.astype(np.int32, copy=False), float(q05), float(q95), vmin, vmax
 
-        props = context.scene.sci_blend_volume_render
+        props = context.scene.blend_et_volume_render
         path = bpy.path.abspath(props.numpy_path or "")
         if not path or not os.path.exists(path):
             self.report({"ERROR"}, "Pick a valid .npy /.npz file first.")
@@ -1498,13 +1397,13 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
         grid.name = "density"
         grid.copyFromArray(arr)
 
-        # Output file under same directory in 'sciblend_cache'
+        # Output file under same directory in 'BlendET_cache'
         uuid_str = f"{props.uuid:04d}"
         props.uuid += 1
         blend_dir = (
             directory if os.path.isabs(path) else os.path.dirname(bpy.data.filepath)
         )
-        cache_dir = os.path.join(blend_dir, "sciblend_cache")
+        cache_dir = os.path.join(blend_dir, "BlendET_cache")
         os.makedirs(cache_dir, exist_ok=True)
         if ext == ".npz":
             base = os.path.splitext(os.path.basename(path))[0]
@@ -1534,8 +1433,8 @@ class SciBlend_VolumeRender_ImportNumpy(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SciBlend_Materials_ReverseVolumeColormap(bpy.types.Operator):
-    bl_idname = "sci_blend.materials_reverse_volume_colormap"
+class BlendET_Materials_ReverseVolumeColormap(bpy.types.Operator):
+    bl_idname = "blend_et.materials_reverse_volume_colormap"
     bl_label = "Reverse colormap"
     bl_description = "Reverse the active material's colormap"
     bl_options = {"REGISTER", "UNDO"}
@@ -1553,8 +1452,8 @@ class SciBlend_Materials_ReverseVolumeColormap(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class SciBlend_Materials_CreateOrResetVolumeMaterial(bpy.types.Operator):
-    bl_idname = "sci_blend.materials_create_or_reset_volume_material"
+class BlendET_Materials_CreateOrResetVolumeMaterial(bpy.types.Operator):
+    bl_idname = "blend_et.materials_create_or_reset_volume_material"
     bl_label = "Create or Reset Volume Material"
     bl_description = (
         "Create a basic material for volume rendering or reset the existing one"
@@ -1571,14 +1470,132 @@ class SciBlend_Materials_CreateOrResetVolumeMaterial(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class BlendET_Latex_CompileAsMesh(bpy.types.Operator):
+    bl_idname = "blend_et.latex_compile_as_mesh"
+    bl_label = "Compile LaTeX as mesh"
+
+    def execute(self, context):
+        props = context.scene.blend_et_latex
+        if (
+            props.latex_code == ""
+            and props.custom_preamble_bool
+            and props.preamble_path == ""
+        ):
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered and no preamble file has been chosen. "
+                "Please enter some LaTeX code and choose a .tex file for the preamble",
+            )
+        elif props.custom_material_bool and props.custom_material_value is None:
+            self.report(
+                {"ERROR"}, "No material has been chosen. Please choose a material."
+            )
+        elif props.latex_code == "":
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered. Please enter some LaTeX code.",
+            )
+        elif props.custom_preamble_bool and props.preamble_path == "":
+            self.report(
+                {"ERROR"}, "No preamble file has been chosen. Please choose a file."
+            )
+        else:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                _compile_with_latex(
+                    self,
+                    context,
+                    props.latex_code,
+                    props.custom_latex_path,
+                    props.custom_pdflatex_path,
+                    props.custom_xelatex_path,
+                    props.custom_lualatex_path,
+                    props.custom_dvisvgm_path,
+                    props.command_selection,
+                    props.text_scale,
+                    props.text_thickness,
+                    props.x_loc,
+                    props.y_loc,
+                    props.z_loc,
+                    props.x_rot,
+                    props.y_rot,
+                    props.z_rot,
+                    props.custom_preamble_bool,
+                    temp_dir,
+                    props.custom_material_bool,
+                    props.custom_material_value,
+                    "mesh",
+                    props.preamble_path,
+                )
+        return {"FINISHED"}
+
+
+class BlendET_Latex_CompileAsGreasePencil(bpy.types.Operator):
+    bl_idname = "blend_et.latex_compile_as_grease_pencil"
+    bl_label = "Compile LaTeX as grease pencil"
+
+    def execute(self, context):
+        props = context.scene.blend_et_latex
+        if (
+            props.latex_code == ""
+            and props.custom_preamble_bool
+            and props.preamble_path == ""
+        ):
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered and no preamble file has been chosen. Please enter some "
+                "LaTeX code and choose a .tex file for the preamble",
+            )
+        elif props.custom_material_bool and props.custom_material_value is None:
+            self.report(
+                {"ERROR"}, "No material has been chosen. Please choose a material."
+            )
+        elif props.latex_code == "":
+            self.report(
+                {"ERROR"},
+                "No LaTeX code has been entered. Please enter some LaTeX code.",
+            )
+        elif props.custom_preamble_bool and props.preamble_path == "":
+            self.report(
+                {"ERROR"}, "No preamble file has been chosen. Please choose a file."
+            )
+        else:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                _compile_with_latex(
+                    self,
+                    context,
+                    props.latex_code,
+                    props.custom_latex_path,
+                    props.custom_pdflatex_path,
+                    props.custom_xelatex_path,
+                    props.custom_lualatex_path,
+                    props.custom_dvisvgm_path,
+                    props.command_selection,
+                    props.text_scale,
+                    props.text_thickness,
+                    props.x_loc,
+                    props.y_loc,
+                    props.z_loc,
+                    props.x_rot,
+                    props.y_rot,
+                    props.z_rot,
+                    props.custom_preamble_bool,
+                    temp_dir,
+                    props.custom_material_bool,
+                    props.custom_material_value,
+                    "grease pencil",
+                    props.preamble_path,
+                )
+        return {"FINISHED"}
+
+
 # -----------------------------
 # UI Panels
 # -----------------------------
-class SciBlend_Material_NDE_UI(bpy.types.Panel):
+class BlendET_Material_NDE_UI(bpy.types.Panel):
     bl_label = "Volume material"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = "UI"
-    bl_category = "SciBlend"
+    bl_category = "BlendET"
 
     @classmethod
     def poll(cls, context):
@@ -1599,7 +1616,7 @@ class SciBlend_Material_NDE_UI(bpy.types.Panel):
         layout.use_property_decorate = False
 
         layout.row().operator(
-            "sci_blend.materials_create_or_reset_volume_material",
+            "blend_et.materials_create_or_reset_volume_material",
             icon="NODETREE",
             text="Create/reset volume material",
         )
@@ -1610,7 +1627,7 @@ class SciBlend_Material_NDE_UI(bpy.types.Panel):
         box.row().template_icon_view(mat, "volume_colormap", show_labels=True, scale=5)
 
         box.row().operator(
-            "sci_blend.materials_reverse_volume_colormap",
+            "blend_et.materials_reverse_volume_colormap",
             icon="ARROW_LEFTRIGHT",
             text="Reverse colormap",
         )
@@ -1640,40 +1657,51 @@ class SciBlend_Material_NDE_UI(bpy.types.Panel):
             box.row().label(text="Quantiles shown with red lines", icon="INFO")
 
 
-class SciBlend_Tools_3DV_UI(bpy.types.Panel):
+class BlendET_Tools_3DV_UI(bpy.types.Panel):
     bl_label = "Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "SciBlend"
+    bl_category = "BlendET"
 
     def draw(self, context):
         layout = self.layout
-        props = context.scene.sci_blend_tools
-
-        layout.separator()
+        props = context.scene.blend_et_tools
         box = layout.box()
         box.row().label(
             text="Enable CUDA/HIP/OneAPI support in Preferences before proceeding.",
             icon="INFO",
         )
-        box.row().operator("sci_blend.switch_to_cycles", icon="RENDER_STILL")
-        box.row().operator("sci_blend.fix_colors", icon="COLOR")
+        box.row().operator("blend_et.switch_to_cycles", icon="RENDER_STILL")
+        box.row().operator("blend_et.fix_colors", icon="COLOR")
 
         layout.separator()
         box = layout.box()
         box.row().prop(props, "background_color")
-        box.row().operator("sci_blend.tools_set_background", icon="WORLD")
+        box.row().operator("blend_et.tools_set_background", icon="WORLD")
 
 
-class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
-    bl_label = "Volume Rendering"
+class BlendET_Annotations_3DV_UI(bpy.types.Panel):
+    bl_label = "Annotations"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "SciBlend"
+    bl_category = "BlendET"
 
     def draw(self, context):
         layout = self.layout
-        props = context.scene.sci_blend_volume_render
+        props = context.scene.blend_et_annotations
+
+        pass
+
+
+class BlendET_VolumeRender_3DV_UI(bpy.types.Panel):
+    bl_label = "Volume Rendering"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "BlendET"
+
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.blend_et_volume_render
 
         layout.prop(props, "save_relative")
 
@@ -1682,7 +1710,7 @@ class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
         box = layout.box()
         box.row().label(text="VDB → Volume (.vdb)")
         box.row().prop(props, "vdb_path")
-        box.row().operator("sci_blend.volume_render_import_vdb", icon="IMPORT")
+        box.row().operator("blend_et.volume_render_import_vdb", icon="IMPORT")
 
         layout.separator()
         box = layout.box()
@@ -1704,19 +1732,19 @@ class SciBlend_VolumeRender_3DV_UI(bpy.types.Panel):
         split = row.split()
         split.column().prop(props, "numpy_crop_zmin")
         split.column().prop(props, "numpy_crop_zmax")
-        box.row().operator("sci_blend.volume_render_import_numpy", icon="IMPORT")
+        box.row().operator("blend_et.volume_render_import_numpy", icon="IMPORT")
 
 
-class SciBlend_Latex_3DV_UI(bpy.types.Panel):
+class BlendET_Latex_3DV_UI(bpy.types.Panel):
     bl_label = "Latex"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "SciBlend"
+    bl_category = "BlendET"
     bl_context = "objectmode"
 
     def draw(self, context):
         layout = self.layout
-        props = context.scene.sci_blend_latex
+        props = context.scene.blend_et_latex
 
         layout.label(text="Adapted from ghseeli/latex2blender", icon="INFO")
         layout.separator()
@@ -1770,32 +1798,34 @@ class SciBlend_Latex_3DV_UI(bpy.types.Panel):
 
         box = layout.box()
         row = box.row()
-        row.operator("sci_blend.latex_compile_as_mesh", icon="MESH_CUBE")
+        row.operator("blend_et.latex_compile_as_mesh", icon="MESH_CUBE")
         row = box.row()
-        row.operator("sci_blend.latex_compile_as_grease_pencil", icon="GREASEPENCIL")
+        row.operator("blend_et.latex_compile_as_grease_pencil", icon="GREASEPENCIL")
 
 
 # -----------------------------
 classes = (
     # props
-    SciBlend_Tools_Props,
-    SciBlend_VolumeRender_Props,
-    SciBlend_Latex_Props,
+    BlendET_Tools_Props,
+    BlendET_Annotations_Props,
+    BlendET_VolumeRender_Props,
+    BlendET_Latex_Props,
     # operators
-    SciBlend_Materials_ReverseVolumeColormap,
-    SciBlend_Materials_CreateOrResetVolumeMaterial,
-    SciBlend_Latex_CompileAsMesh,
-    SciBlend_Latex_CompileAsGreasePencil,
-    SciBlend_Tools_FixColors,
-    SciBlend_Tools_SwitchToCycles,
-    SciBlend_Tools_SetBackground,
-    SciBlend_VolumeRender_ImportVDB,
-    SciBlend_VolumeRender_ImportNumpy,
+    BlendET_Tools_FixColors,
+    BlendET_Tools_SwitchToCycles,
+    BlendET_Tools_SetBackground,
+    BlendET_VolumeRender_ImportVDB,
+    BlendET_VolumeRender_ImportNumpy,
+    BlendET_Materials_ReverseVolumeColormap,
+    BlendET_Materials_CreateOrResetVolumeMaterial,
+    BlendET_Latex_CompileAsMesh,
+    BlendET_Latex_CompileAsGreasePencil,
     # panels
-    SciBlend_Material_NDE_UI,
-    SciBlend_Tools_3DV_UI,
-    SciBlend_VolumeRender_3DV_UI,
-    SciBlend_Latex_3DV_UI,
+    BlendET_Tools_3DV_UI,
+    BlendET_Annotations_3DV_UI,
+    BlendET_VolumeRender_3DV_UI,
+    BlendET_Material_NDE_UI,
+    BlendET_Latex_3DV_UI,
 )
 
 
@@ -1803,24 +1833,25 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     _build_colormap_previews()
-    SciBlend_Material_Props.register()
 
-    bpy.types.Scene.sci_blend_tools = bpy.props.PointerProperty(
-        type=SciBlend_Tools_Props
+    bpy.types.Scene.blend_et_tools = bpy.props.PointerProperty(type=BlendET_Tools_Props)
+    bpy.types.Scene.blend_et_annotations = bpy.props.PointerProperty(
+        type=BlendET_Annotations_Props
     )
-    bpy.types.Scene.sci_blend_volume_render = bpy.props.PointerProperty(
-        type=SciBlend_VolumeRender_Props
+    bpy.types.Scene.blend_et_volume_render = bpy.props.PointerProperty(
+        type=BlendET_VolumeRender_Props
     )
-    bpy.types.Scene.sci_blend_latex = bpy.props.PointerProperty(
-        type=SciBlend_Latex_Props
-    )
+    bpy.types.Scene.blend_et_latex = bpy.props.PointerProperty(type=BlendET_Latex_Props)
+    BlendET_Material_Props.register()
 
 
 def unregister():
-    del bpy.types.Scene.sci_blend_tools
-    del bpy.types.Scene.sci_blend_volume_render
-    del bpy.types.Scene.sci_blend_latex
-    SciBlend_Material_Props.unregister()
+    BlendET_Material_Props.unregister()
+    del bpy.types.Scene.blend_et_latex
+    del bpy.types.Scene.blend_et_volume_render
+    del bpy.types.Scene.blend_et_annotations
+    del bpy.types.Scene.blend_et_tools
+
     _free_colormap_previews()
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
