@@ -60,8 +60,6 @@ class Latex_Panel_3DV(bpy.types.Panel):
         if props.custom_material_bool:
             layout.prop(props, "custom_material_value")
 
-        layout.separator()
-
         box = layout.box()
         row = box.row()
         row.operator("blend_et.latex_compile_as_mesh", icon="MESH_CUBE")

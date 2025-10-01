@@ -10,5 +10,4 @@ class Annotations_Panel_3DV(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         props = context.scene.blend_et_annotations
-
-        pass
+        layout.operator("blend_et.annotations_add_axes_grid", icon="MESH_GRID")
