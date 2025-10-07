@@ -239,7 +239,6 @@ def Compile_with_latex(
                     },
                 )
                 bpy.ops.object.mode_set(mode="OBJECT")
-                bpy.context.selected_objects[0].data.use_auto_smooth = True
 
             else:
                 _error_msg("Unknown compile mode.", "Error")

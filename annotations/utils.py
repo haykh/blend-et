@@ -22,7 +22,6 @@ def Axes_grid_geometry_node():
         intpart_socket.subtype = "NONE"
         intpart_socket.attribute_domain = "POINT"
         intpart_socket.default_input = "VALUE"
-        intpart_socket.structure_type = "AUTO"
 
         # Socket Remainder
         remainder_socket = divider.interface.new_socket(
@@ -34,7 +33,6 @@ def Axes_grid_geometry_node():
         remainder_socket.subtype = "NONE"
         remainder_socket.attribute_domain = "POINT"
         remainder_socket.default_input = "VALUE"
-        remainder_socket.structure_type = "AUTO"
 
         # Socket Size
         size_socket = divider.interface.new_socket(
@@ -46,7 +44,6 @@ def Axes_grid_geometry_node():
         size_socket.subtype = "DISTANCE"
         size_socket.attribute_domain = "POINT"
         size_socket.default_input = "VALUE"
-        size_socket.structure_type = "AUTO"
 
         # Socket Delta
         delta_socket = divider.interface.new_socket(
@@ -58,7 +55,6 @@ def Axes_grid_geometry_node():
         delta_socket.subtype = "DISTANCE"
         delta_socket.attribute_domain = "POINT"
         delta_socket.default_input = "VALUE"
-        delta_socket.structure_type = "AUTO"
 
         # Socket MinCutoff
         mincutoff_socket = divider.interface.new_socket(
@@ -70,7 +66,6 @@ def Axes_grid_geometry_node():
         mincutoff_socket.subtype = "NONE"
         mincutoff_socket.attribute_domain = "POINT"
         mincutoff_socket.default_input = "VALUE"
-        mincutoff_socket.structure_type = "AUTO"
 
         # Initialize divider nodes
 
@@ -205,7 +200,6 @@ def Axes_grid_geometry_node():
         )
         points_socket.attribute_domain = "POINT"
         points_socket.default_input = "VALUE"
-        points_socket.structure_type = "AUTO"
 
         # Socket Xmin
         xmin_socket = generatepoints.interface.new_socket(
@@ -217,7 +211,6 @@ def Axes_grid_geometry_node():
         xmin_socket.subtype = "NONE"
         xmin_socket.attribute_domain = "POINT"
         xmin_socket.default_input = "VALUE"
-        xmin_socket.structure_type = "AUTO"
 
         # Socket Xmax
         xmax_socket = generatepoints.interface.new_socket(
@@ -229,7 +222,6 @@ def Axes_grid_geometry_node():
         xmax_socket.subtype = "NONE"
         xmax_socket.attribute_domain = "POINT"
         xmax_socket.default_input = "VALUE"
-        xmax_socket.structure_type = "AUTO"
 
         # Socket Size
         size_socket_1 = generatepoints.interface.new_socket(
@@ -241,7 +233,6 @@ def Axes_grid_geometry_node():
         size_socket_1.subtype = "DISTANCE"
         size_socket_1.attribute_domain = "POINT"
         size_socket_1.default_input = "VALUE"
-        size_socket_1.structure_type = "AUTO"
 
         # Socket Delta
         delta_socket_1 = generatepoints.interface.new_socket(
@@ -253,7 +244,6 @@ def Axes_grid_geometry_node():
         delta_socket_1.subtype = "DISTANCE"
         delta_socket_1.attribute_domain = "POINT"
         delta_socket_1.default_input = "VALUE"
-        delta_socket_1.structure_type = "AUTO"
 
         # Initialize generatepoints nodes
 
@@ -364,8 +354,9 @@ def Axes_grid_geometry_node():
         # Node Bounding Box
         bounding_box = generatepoints.nodes.new("GeometryNodeBoundBox")
         bounding_box.name = "Bounding Box"
-        # Use Radius
-        bounding_box.inputs[1].default_value = False
+        if bpy.app.version >= (4, 5, 0):
+            # Use Radius
+            bounding_box.inputs[1].default_value = False
 
         # Node Separate XYZ
         separate_xyz = generatepoints.nodes.new("ShaderNodeSeparateXYZ")
@@ -488,7 +479,6 @@ def Axes_grid_geometry_node():
         )
         geometry_socket.attribute_domain = "POINT"
         geometry_socket.default_input = "VALUE"
-        geometry_socket.structure_type = "AUTO"
 
         # Socket Size
         size_socket_2 = ticks.interface.new_socket(
@@ -500,7 +490,6 @@ def Axes_grid_geometry_node():
         size_socket_2.subtype = "DISTANCE"
         size_socket_2.attribute_domain = "POINT"
         size_socket_2.default_input = "VALUE"
-        size_socket_2.structure_type = "AUTO"
 
         # Socket Delta
         delta_socket_2 = ticks.interface.new_socket(
@@ -512,7 +501,6 @@ def Axes_grid_geometry_node():
         delta_socket_2.subtype = "DISTANCE"
         delta_socket_2.attribute_domain = "POINT"
         delta_socket_2.default_input = "VALUE"
-        delta_socket_2.structure_type = "AUTO"
 
         # Initialize ticks nodes
 
@@ -703,7 +691,6 @@ def Axes_grid_geometry_node():
         translation_socket.subtype = "NONE"
         translation_socket.attribute_domain = "POINT"
         translation_socket.default_input = "VALUE"
-        translation_socket.structure_type = "AUTO"
 
         # Socket Rotation
         rotation_socket = transformation.interface.new_socket(
@@ -712,7 +699,6 @@ def Axes_grid_geometry_node():
         rotation_socket.default_value = (0.0, 0.0, 0.0)
         rotation_socket.attribute_domain = "POINT"
         rotation_socket.default_input = "VALUE"
-        rotation_socket.structure_type = "AUTO"
 
         # Socket Stretch
         stretch_socket = transformation.interface.new_socket(
@@ -724,7 +710,6 @@ def Axes_grid_geometry_node():
         stretch_socket.subtype = "NONE"
         stretch_socket.attribute_domain = "POINT"
         stretch_socket.default_input = "VALUE"
-        stretch_socket.structure_type = "AUTO"
 
         # Socket SizeAcross
         sizeacross_socket = transformation.interface.new_socket(
@@ -736,7 +721,6 @@ def Axes_grid_geometry_node():
         sizeacross_socket.subtype = "NONE"
         sizeacross_socket.attribute_domain = "POINT"
         sizeacross_socket.default_input = "VALUE"
-        sizeacross_socket.structure_type = "AUTO"
 
         # Socket Sizes
         sizes_socket = transformation.interface.new_socket(
@@ -748,7 +732,6 @@ def Axes_grid_geometry_node():
         sizes_socket.subtype = "NONE"
         sizes_socket.attribute_domain = "POINT"
         sizes_socket.default_input = "VALUE"
-        sizes_socket.structure_type = "AUTO"
 
         # Socket TranslateInXYZ
         translateinxyz_socket = transformation.interface.new_socket(
@@ -760,7 +743,6 @@ def Axes_grid_geometry_node():
         translateinxyz_socket.subtype = "NONE"
         translateinxyz_socket.attribute_domain = "POINT"
         translateinxyz_socket.default_input = "VALUE"
-        translateinxyz_socket.structure_type = "AUTO"
 
         # Socket RotateInXYZ
         rotateinxyz_socket = transformation.interface.new_socket(
@@ -772,7 +754,6 @@ def Axes_grid_geometry_node():
         rotateinxyz_socket.subtype = "NONE"
         rotateinxyz_socket.attribute_domain = "POINT"
         rotateinxyz_socket.default_input = "VALUE"
-        rotateinxyz_socket.structure_type = "AUTO"
 
         # Initialize transformation nodes
 
@@ -970,7 +951,6 @@ def Axes_grid_geometry_node():
         component_socket.subtype = "NONE"
         component_socket.attribute_domain = "POINT"
         component_socket.default_input = "VALUE"
-        component_socket.structure_type = "AUTO"
 
         # Socket Switch
         switch_socket = vectorcomponent.interface.new_socket(
@@ -982,7 +962,6 @@ def Axes_grid_geometry_node():
         switch_socket.subtype = "NONE"
         switch_socket.attribute_domain = "POINT"
         switch_socket.default_input = "VALUE"
-        switch_socket.structure_type = "AUTO"
 
         # Socket Vector
         vector_socket = vectorcomponent.interface.new_socket(
@@ -994,7 +973,6 @@ def Axes_grid_geometry_node():
         vector_socket.subtype = "NONE"
         vector_socket.attribute_domain = "POINT"
         vector_socket.default_input = "VALUE"
-        vector_socket.structure_type = "AUTO"
 
         # Initialize vectorcomponent nodes
 
@@ -1102,7 +1080,6 @@ def Axes_grid_geometry_node():
         )
         mesh_socket.attribute_domain = "POINT"
         mesh_socket.default_input = "VALUE"
-        mesh_socket.structure_type = "AUTO"
 
         # Socket Sizes
         sizes_socket_1 = oneside.interface.new_socket(
@@ -1114,7 +1091,6 @@ def Axes_grid_geometry_node():
         sizes_socket_1.subtype = "NONE"
         sizes_socket_1.attribute_domain = "POINT"
         sizes_socket_1.default_input = "VALUE"
-        sizes_socket_1.structure_type = "AUTO"
 
         # Socket Deltas
         deltas_socket = oneside.interface.new_socket(
@@ -1126,7 +1102,6 @@ def Axes_grid_geometry_node():
         deltas_socket.subtype = "NONE"
         deltas_socket.attribute_domain = "POINT"
         deltas_socket.default_input = "VALUE"
-        deltas_socket.structure_type = "AUTO"
 
         # Socket SideAlong
         sidealong_socket = oneside.interface.new_socket(
@@ -1138,7 +1113,6 @@ def Axes_grid_geometry_node():
         sidealong_socket.subtype = "NONE"
         sidealong_socket.attribute_domain = "POINT"
         sidealong_socket.default_input = "VALUE"
-        sidealong_socket.structure_type = "AUTO"
 
         # Socket SideAcross
         sideacross_socket = oneside.interface.new_socket(
@@ -1150,7 +1124,6 @@ def Axes_grid_geometry_node():
         sideacross_socket.subtype = "NONE"
         sideacross_socket.attribute_domain = "POINT"
         sideacross_socket.default_input = "VALUE"
-        sideacross_socket.structure_type = "AUTO"
 
         # Socket TranslateInX
         translateinx_socket = oneside.interface.new_socket(
@@ -1159,7 +1132,6 @@ def Axes_grid_geometry_node():
         translateinx_socket.default_value = False
         translateinx_socket.attribute_domain = "POINT"
         translateinx_socket.default_input = "VALUE"
-        translateinx_socket.structure_type = "AUTO"
 
         # Socket TranslateInY
         translateiny_socket = oneside.interface.new_socket(
@@ -1168,7 +1140,6 @@ def Axes_grid_geometry_node():
         translateiny_socket.default_value = False
         translateiny_socket.attribute_domain = "POINT"
         translateiny_socket.default_input = "VALUE"
-        translateiny_socket.structure_type = "AUTO"
 
         # Socket TranslateInZ
         translateinz_socket = oneside.interface.new_socket(
@@ -1177,7 +1148,6 @@ def Axes_grid_geometry_node():
         translateinz_socket.default_value = False
         translateinz_socket.attribute_domain = "POINT"
         translateinz_socket.default_input = "VALUE"
-        translateinz_socket.structure_type = "AUTO"
 
         # Socket RotateInX
         rotateinx_socket = oneside.interface.new_socket(
@@ -1186,7 +1156,6 @@ def Axes_grid_geometry_node():
         rotateinx_socket.default_value = False
         rotateinx_socket.attribute_domain = "POINT"
         rotateinx_socket.default_input = "VALUE"
-        rotateinx_socket.structure_type = "AUTO"
 
         # Socket RotateInY
         rotateiny_socket = oneside.interface.new_socket(
@@ -1195,7 +1164,6 @@ def Axes_grid_geometry_node():
         rotateiny_socket.default_value = False
         rotateiny_socket.attribute_domain = "POINT"
         rotateiny_socket.default_input = "VALUE"
-        rotateiny_socket.structure_type = "AUTO"
 
         # Socket RotateInZ
         rotateinz_socket = oneside.interface.new_socket(
@@ -1204,7 +1172,6 @@ def Axes_grid_geometry_node():
         rotateinz_socket.default_value = False
         rotateinz_socket.attribute_domain = "POINT"
         rotateinz_socket.default_input = "VALUE"
-        rotateinz_socket.structure_type = "AUTO"
 
         # Initialize oneside nodes
 
@@ -1439,7 +1406,6 @@ def Axes_grid_geometry_node():
         )
         mesh_socket_1.attribute_domain = "POINT"
         mesh_socket_1.default_input = "VALUE"
-        mesh_socket_1.structure_type = "AUTO"
 
         # Socket Curve
         curve_socket = outline.interface.new_socket(
@@ -1447,7 +1413,6 @@ def Axes_grid_geometry_node():
         )
         curve_socket.attribute_domain = "POINT"
         curve_socket.default_input = "VALUE"
-        curve_socket.structure_type = "AUTO"
 
         # Socket Resolution
         resolution_socket = outline.interface.new_socket(
@@ -1460,7 +1425,6 @@ def Axes_grid_geometry_node():
         resolution_socket.attribute_domain = "POINT"
         resolution_socket.description = "Number of points on the circle"
         resolution_socket.default_input = "VALUE"
-        resolution_socket.structure_type = "AUTO"
 
         # Socket Radius
         radius_socket = outline.interface.new_socket(
@@ -1473,7 +1437,6 @@ def Axes_grid_geometry_node():
         radius_socket.attribute_domain = "POINT"
         radius_socket.description = "Distance of the points from the origin"
         radius_socket.default_input = "VALUE"
-        radius_socket.structure_type = "AUTO"
 
         # Initialize outline nodes
 
@@ -1489,25 +1452,32 @@ def Axes_grid_geometry_node():
         # Node Curve to Mesh
         curve_to_mesh = outline.nodes.new("GeometryNodeCurveToMesh")
         curve_to_mesh.name = "Curve to Mesh"
-        # Scale
-        curve_to_mesh.inputs[2].default_value = 1.0
-        # Fill Caps
-        curve_to_mesh.inputs[3].default_value = False
+        if bpy.app.version >= (4, 5, 0):
+            # Scale
+            curve_to_mesh.inputs[2].default_value = 1.0
+            # Fill Caps
+            curve_to_mesh.inputs[3].default_value = False
+        else:
+            # Fill Caps
+            curve_to_mesh.inputs[2].default_value = False
 
         # Node Mesh to Curve
         mesh_to_curve = outline.nodes.new("GeometryNodeMeshToCurve")
         mesh_to_curve.name = "Mesh to Curve"
-        mesh_to_curve.mode = "EDGES"
         # Selection
         mesh_to_curve.inputs[1].default_value = True
 
         # Node Curve to Mesh.001
         curve_to_mesh_001 = outline.nodes.new("GeometryNodeCurveToMesh")
         curve_to_mesh_001.name = "Curve to Mesh.001"
-        # Scale
-        curve_to_mesh_001.inputs[2].default_value = 1.0
-        # Fill Caps
-        curve_to_mesh_001.inputs[3].default_value = True
+        if bpy.app.version >= (4, 5, 0):
+            # Scale
+            curve_to_mesh_001.inputs[2].default_value = 1.0
+            # Fill Caps
+            curve_to_mesh_001.inputs[3].default_value = True
+        else:
+            # Fill Caps
+            curve_to_mesh_001.inputs[2].default_value = True
 
         # Node Curve Circle
         curve_circle = outline.nodes.new("GeometryNodeCurvePrimitiveCircle")
@@ -1580,7 +1550,6 @@ def Axes_grid_geometry_node():
         )
         geometry_socket_1.attribute_domain = "POINT"
         geometry_socket_1.default_input = "VALUE"
-        geometry_socket_1.structure_type = "AUTO"
 
         # Socket Sizes
         sizes_socket_2 = geometry_nodes.interface.new_socket(
@@ -1592,7 +1561,6 @@ def Axes_grid_geometry_node():
         sizes_socket_2.subtype = "XYZ"
         sizes_socket_2.attribute_domain = "POINT"
         sizes_socket_2.default_input = "VALUE"
-        sizes_socket_2.structure_type = "AUTO"
 
         # Socket Deltas
         deltas_socket_1 = geometry_nodes.interface.new_socket(
@@ -1608,7 +1576,6 @@ def Axes_grid_geometry_node():
         deltas_socket_1.subtype = "XYZ"
         deltas_socket_1.attribute_domain = "POINT"
         deltas_socket_1.default_input = "VALUE"
-        deltas_socket_1.structure_type = "AUTO"
 
         # Socket +X
         _x_socket = geometry_nodes.interface.new_socket(
@@ -1617,7 +1584,6 @@ def Axes_grid_geometry_node():
         _x_socket.default_value = False
         _x_socket.attribute_domain = "POINT"
         _x_socket.default_input = "VALUE"
-        _x_socket.structure_type = "AUTO"
 
         # Socket -X
         _x_socket_1 = geometry_nodes.interface.new_socket(
@@ -1626,7 +1592,6 @@ def Axes_grid_geometry_node():
         _x_socket_1.default_value = True
         _x_socket_1.attribute_domain = "POINT"
         _x_socket_1.default_input = "VALUE"
-        _x_socket_1.structure_type = "AUTO"
 
         # Socket +Y
         _y_socket = geometry_nodes.interface.new_socket(
@@ -1635,7 +1600,6 @@ def Axes_grid_geometry_node():
         _y_socket.default_value = False
         _y_socket.attribute_domain = "POINT"
         _y_socket.default_input = "VALUE"
-        _y_socket.structure_type = "AUTO"
 
         # Socket -Y
         _y_socket_1 = geometry_nodes.interface.new_socket(
@@ -1644,7 +1608,6 @@ def Axes_grid_geometry_node():
         _y_socket_1.default_value = True
         _y_socket_1.attribute_domain = "POINT"
         _y_socket_1.default_input = "VALUE"
-        _y_socket_1.structure_type = "AUTO"
 
         # Socket +Z
         _z_socket = geometry_nodes.interface.new_socket(
@@ -1653,7 +1616,6 @@ def Axes_grid_geometry_node():
         _z_socket.default_value = False
         _z_socket.attribute_domain = "POINT"
         _z_socket.default_input = "VALUE"
-        _z_socket.structure_type = "AUTO"
 
         # Socket -Z
         _z_socket_1 = geometry_nodes.interface.new_socket(
@@ -1662,7 +1624,6 @@ def Axes_grid_geometry_node():
         _z_socket_1.default_value = True
         _z_socket_1.attribute_domain = "POINT"
         _z_socket_1.default_input = "VALUE"
-        _z_socket_1.structure_type = "AUTO"
 
         # Socket Resolution
         resolution_socket_1 = geometry_nodes.interface.new_socket(
@@ -1675,7 +1636,6 @@ def Axes_grid_geometry_node():
         resolution_socket_1.attribute_domain = "POINT"
         resolution_socket_1.description = "Number of points on the circle"
         resolution_socket_1.default_input = "VALUE"
-        resolution_socket_1.structure_type = "AUTO"
 
         # Socket Radius
         radius_socket_1 = geometry_nodes.interface.new_socket(
@@ -1688,7 +1648,6 @@ def Axes_grid_geometry_node():
         radius_socket_1.attribute_domain = "POINT"
         radius_socket_1.description = "Distance of the points from the origin"
         radius_socket_1.default_input = "VALUE"
-        radius_socket_1.structure_type = "AUTO"
 
         # Initialize geometry_nodes nodes
 
