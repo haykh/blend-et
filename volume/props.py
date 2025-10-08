@@ -1,8 +1,11 @@
-import bpy  # type: ignore
+import bpy
 
 from .utils import (
-    Enum_colormap_items,
     On_material_colormap_change,
+)
+
+from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
+    Enum_colormap_items,
 )
 
 

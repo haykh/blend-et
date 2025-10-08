@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 def classes():

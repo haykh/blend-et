@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 import tempfile
 
@@ -9,8 +9,11 @@ class Latex_CompileAsMesh(bpy.types.Operator):
     bl_idname = "blend_et.latex_compile_as_mesh"
     bl_label = "Compile LaTeX as mesh"
 
-    def execute(self, context):
-        props = context.scene.blend_et_latex
+    def execute(self, context: bpy.types.Context):
+        if (scene := context.scene) is None:
+            self.report({"ERROR"}, "No active scene found")
+            return {"CANCELLED"}
+        props = scene.blend_et_latex
         if (
             props.latex_code == ""
             and props.custom_preamble_bool
@@ -68,8 +71,11 @@ class Latex_CompileAsGreasePencil(bpy.types.Operator):
     bl_idname = "blend_et.latex_compile_as_grease_pencil"
     bl_label = "Compile LaTeX as grease pencil"
 
-    def execute(self, context):
-        props = context.scene.blend_et_latex
+    def execute(self, context: bpy.types.Context):
+        if (scene := context.scene) is None:
+            self.report({"ERROR"}, "No active scene found")
+            return {"CANCELLED"}
+        props = scene.blend_et_latex
         if (
             props.latex_code == ""
             and props.custom_preamble_bool

@@ -1,4 +1,5 @@
 {
+  "reportAttributeAccessIssue": "none",
   "reportInvalidTypeForm": false,
   "typeCheckingMode": "basic",
 }

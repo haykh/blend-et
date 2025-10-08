@@ -1,12 +1,12 @@
-import bpy  # type: ignore
+import bpy
 import sys
 import importlib
 
-from . import tools, annotations, volume, latex
+from . import colormaps, tools, annotations, volume, fieldlines, latex
 
 ADDON_PKG = str(__package__).split(".")[0]
 
-SUBMODULES = (tools, annotations, volume, latex)
+SUBMODULES = (colormaps, tools, annotations, volume, fieldlines, latex)
 
 
 def RegisterAll(include_dev=True):
@@ -49,14 +49,16 @@ def _reload_addon_packages():
         importlib.reload(sys.modules[name])
 
     from . import (
+        colormaps as _colormaps,
         tools as _tools,
         annotations as _annotations,
         volume as _volume,
+        fieldlines as _fieldlines,
         latex as _latex,
     )
 
     global SUBMODULES
-    SUBMODULES = (_tools, _annotations, _volume, _latex)
+    SUBMODULES = (_colormaps, _tools, _annotations, _volume, _fieldlines, _latex)
 
 
 class Dev_Panel_3DV(bpy.types.Panel):
@@ -65,9 +67,9 @@ class Dev_Panel_3DV(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "BlendET"
 
-    def draw(self, context):
-        layout = self.layout
-        layout.operator("blend_et.dev_reload", icon="INFO")
+    def draw(self, context: bpy.types.Context):
+        if (layout := self.layout) is not None:
+            layout.operator("blend_et.dev_reload", icon="INFO")
 
 
 class DevReload(bpy.types.Operator):
@@ -75,7 +77,7 @@ class DevReload(bpy.types.Operator):
     bl_label = "Reload Blend-ET"
     bl_options = {"INTERNAL"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context):
         try:
             UnregisterAll(include_dev=False)
 
@@ -83,9 +85,12 @@ class DevReload(bpy.types.Operator):
 
             RegisterAll(include_dev=False)
 
-            for window in bpy.context.window_manager.windows:
-                for area in window.screen.areas:
-                    area.tag_redraw()
+            if bpy.context.window_manager is not None:
+                for window in bpy.context.window_manager.windows:
+                    for area in window.screen.areas:
+                        area.tag_redraw()
+            else:
+                raise Exception("No window manager found")
 
             self.report({"INFO"}, "Blend-ET reloaded")
             print("[blend_et] dev_reload complete")

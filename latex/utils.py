@@ -6,10 +6,14 @@ def _error_msg(message, title):
     def draw(self, context):
         self.layout.label(text=message)
 
+    if bpy.context.window_manager is None:
+        raise RuntimeError("No window manager found")
     bpy.context.window_manager.popup_menu(draw, title=title, icon="ERROR")
 
 
 def Rel_to_abs(sp_name):
+    if bpy.context.scene is None:
+        raise RuntimeError("No active scene found")
     if bpy.context.scene.blend_et_latex[sp_name].startswith("//"):
         abs_path = os.path.abspath(
             bpy.path.abspath(bpy.context.scene.blend_et_latex[sp_name])

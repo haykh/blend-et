@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 class Tools_Panel_3DV(bpy.types.Panel):
@@ -8,8 +8,9 @@ class Tools_Panel_3DV(bpy.types.Panel):
     bl_category = "BlendET"
 
     def draw(self, context):
-        layout = self.layout
-        props = context.scene.blend_et_tools
+        if (layout := self.layout) is None or (scene := context.scene) is None:
+            return
+        props = scene.blend_et_tools
         box = layout.box()
         box.row().label(
             text="Enable CUDA/HIP/OneAPI support in Preferences before proceeding.",

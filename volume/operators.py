@@ -1,6 +1,6 @@
-import bpy  # type: ignore
+import bpy
 
-import numpy as np  # type: ignore
+import numpy as np
 
 import os
 
@@ -19,7 +19,7 @@ class VolumeMaterial_ReverseColormap(bpy.types.Operator):
     bl_description = "Reverse the active material's colormap"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context):
         mat = getattr(context.object, "active_material", None)
         if mat is None:
             self.report({"ERROR"}, "No active material on the selected object.")
@@ -40,7 +40,7 @@ class VolumeMaterial_CreateOrReset(bpy.types.Operator):
     )
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context):
         mat = getattr(context.object, "active_material", None)
         if mat is None:
             self.report({"ERROR"}, "No active material on the selected object.")
@@ -56,9 +56,11 @@ class Volume_ImportVDB(bpy.types.Operator):
     bl_description = "Import a .vdb file and create a volume object"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
-        scn = context.scene
-        props = scn.blend_et_volume_render
+    def execute(self, context: bpy.types.Context):
+        if (scene := context.scene) is None:
+            self.report({"ERROR"}, "No active scene found")
+            return {"CANCELLED"}
+        props = scene.blend_et_volume_render
 
         if not props.vdb_path:
             self.report({"ERROR"}, "Please pick a valid .vdb file first.")
@@ -91,8 +93,13 @@ class Volume_ImportNumpy(bpy.types.Operator):
     )
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context):
         import os
+
+        if (scene := context.scene) is None:
+            self.report({"ERROR"}, "No active scene found")
+            return {"CANCELLED"}
+        props = scene.blend_et_volume_render
 
         def _compute_histogram_np(arr: np.ndarray, bins: int = 128):
             """
@@ -121,7 +128,6 @@ class Volume_ImportNumpy(bpy.types.Operator):
             q05, q95 = bns[imin], bns[imax]
             return cnt.astype(np.int32, copy=False), float(q05), float(q95), vmin, vmax
 
-        props = context.scene.blend_et_volume_render
         path = bpy.path.abspath(props.numpy_path or "")
         if not path or not os.path.exists(path):
             self.report({"ERROR"}, "Pick a valid .npy /.npz file first.")

@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 def classes():
@@ -24,7 +24,6 @@ def classes():
 
 def register():
     from .props import Volume_Props, VolumeMaterial_Props
-    from .utils import Build_colormap_previews
 
     for cls in classes():
         bpy.utils.register_class(cls)
@@ -35,14 +34,9 @@ def register():
 
     VolumeMaterial_Props.register()
 
-    Build_colormap_previews()
-
 
 def unregister():
     from .props import VolumeMaterial_Props
-    from .utils import Free_colormap_previews
-
-    Free_colormap_previews()
 
     VolumeMaterial_Props.unregister()
 

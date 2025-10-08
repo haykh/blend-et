@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 class Latex_Panel_3DV(bpy.types.Panel):
@@ -9,8 +9,9 @@ class Latex_Panel_3DV(bpy.types.Panel):
     bl_context = "objectmode"
 
     def draw(self, context):
-        layout = self.layout
-        props = context.scene.blend_et_latex
+        if (layout := self.layout) is None or (scene := context.scene) is None:
+            return
+        props = scene.blend_et_latex
 
         layout.label(text="Adapted from ghseeli/latex2blender", icon="INFO")
         layout.separator()

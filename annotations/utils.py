@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 def Axes_grid_geometry_node():

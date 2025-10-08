@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 def classes():
@@ -17,6 +17,7 @@ def classes():
 
 def register():
     from .props import Tools_Props
+
     for cls in classes():
         bpy.utils.register_class(cls)
 

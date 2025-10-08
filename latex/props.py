@@ -1,6 +1,7 @@
-import bpy  # type: ignore
+import bpy
 
 from .utils import Rel_to_abs
+
 
 class Latex_Props(bpy.types.PropertyGroup):
     latex_code: bpy.props.StringProperty(
@@ -142,4 +143,3 @@ class Latex_Props(bpy.types.PropertyGroup):
         update=lambda s, c: Rel_to_abs("preamble_path"),
         subtype="FILE_PATH",
     )
-

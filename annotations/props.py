@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 class Annotations_Props(bpy.types.PropertyGroup):
     uuid: bpy.props.IntProperty(

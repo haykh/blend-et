@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 class Tools_Props(bpy.types.PropertyGroup):

@@ -1,4 +1,4 @@
-import bpy  # type: ignore
+import bpy
 
 
 class VolumeMaterial_Panel_NDE(bpy.types.Panel):
@@ -18,9 +18,12 @@ class VolumeMaterial_Panel_NDE(bpy.types.Panel):
             and obj.active_material is not None
         )
 
-    def draw(self, context):
-        layout = self.layout
-        mat = context.object.active_material
+    def draw(self, context: bpy.types.Context):
+        if (layout := self.layout) is None:
+            return
+        if (obj := context.object) is None or obj.active_material is None:
+            return
+        mat = obj.active_material
 
         layout.use_property_split = True
         layout.use_property_decorate = False
@@ -74,8 +77,9 @@ class Volume_Panel_3DV(bpy.types.Panel):
     bl_category = "BlendET"
 
     def draw(self, context):
-        layout = self.layout
-        props = context.scene.blend_et_volume_render
+        if (layout := self.layout) is None or (scene := context.scene) is None:
+            return
+        props = scene.blend_et_volume_render
 
         layout.prop(props, "save_relative")
 
