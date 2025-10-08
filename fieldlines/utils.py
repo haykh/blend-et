@@ -45,16 +45,25 @@ def Create_raw_data_fieldline(
     bm.free()
 
     for k, v in data.items():
-        norm = lambda x: x
         if k not in "xyz":
-            norm = lambda x: (
-                (x - np.min(v)) / (np.max(v) - np.min(v))
-                if np.max(v) > np.min(v)
-                else v
-            )
-        attr_k = mesh.attributes.new(name=k, type="FLOAT", domain="POINT")
-        for i in range(npoints):
-            attr_k.data[i].value = norm(float(v[i]))
+            for var, norm in zip(
+                ["color", "thickness"],
+                [
+                    lambda x: (
+                        (x - np.min(v)) / (np.max(v) - np.min(v))
+                        if np.max(v) > np.min(v)
+                        else v
+                    ),
+                    lambda x: (x / np.max(v) if np.max(v) > 0 else v),
+                ],
+            ):
+                attr_k = mesh.attributes.new(name=var, type="FLOAT", domain="POINT")
+                for i in range(npoints):
+                    attr_k.data[i].value = norm(float(v[i]))
+        else:
+            attr_k = mesh.attributes.new(name=k, type="FLOAT", domain="POINT")
+            for i in range(npoints):
+                attr_k.data[i].value = float(v[i])
 
     mesh.update()
 
@@ -94,6 +103,7 @@ def Create_fieldline_geometry_node(
     context: bpy.types.Context,
 ):
     """Creates a geometry node setup for the fieldline object."""
+
     nt = bpy.data.node_groups.new(
         type="GeometryNodeTree", name=f"FieldlineGeometryNodes_{obj.name}"
     )
@@ -123,7 +133,7 @@ def Create_fieldline_geometry_node(
     links.clear()
 
     group_input = _new_node(
-        nodes, "NodeGroupInput", "GroupInput", "Group Input", (-200, -700)
+        nodes, "NodeGroupInput", "GroupInput", "Group Input", (1100.0, -360.0)
     )
     radius_socket = nt.interface.new_socket(
         name="Radius", in_out="INPUT", socket_type="NodeSocketFloat"
@@ -134,6 +144,11 @@ def Create_fieldline_geometry_node(
     radius_socket.attribute_domain = "POINT"
     radius_socket.default_input = "VALUE"
     radius_socket.default_value = 0.01
+
+    radius_modulate_socket = nt.interface.new_socket(
+        name="ModulateRadius", in_out="INPUT", socket_type="NodeSocketBool"
+    )
+    radius_modulate_socket.default_value = True
 
     objinfo = _new_node(
         nodes,
@@ -152,7 +167,7 @@ def Create_fieldline_geometry_node(
             f"Attr {ax.upper()}",
             (100, 100 - i * 200),
         )
-        for i, ax in enumerate("xyzt")
+        for i, ax in enumerate(["x", "y", "z", "color", "thickness"])
     }
     xyz_sample = {
         ax: _new_node(
@@ -162,7 +177,7 @@ def Create_fieldline_geometry_node(
             f"Sample {ax.upper()}",
             (300, 200 - i * 200),
         )
-        for i, ax in enumerate("xyzt")
+        for i, ax in enumerate(["x", "y", "z", "color", "thickness"])
     }
     combine_xyz = _new_node(
         nodes, "ShaderNodeCombineXYZ", "CombineXYZ", "Combine XYZ", (500, -100)
@@ -172,7 +187,7 @@ def Create_fieldline_geometry_node(
         "GeometryNodeAttributeDomainSize",
         "DomainSize",
         "Domain Size",
-        (300, -600),
+        (300.0, 400.0),
     )
     points = _new_node(nodes, "GeometryNodePoints", "Points", "Points", (700, 0))
 
@@ -183,61 +198,68 @@ def Create_fieldline_geometry_node(
         "Points to Curves",
         (900, 0),
     )
-    store_attr_t = _new_node(
+    store_attr_color = _new_node(
         nodes,
         "GeometryNodeStoreNamedAttribute",
-        "StoreAttrT",
-        "Store Attr t",
+        "StoreAttrColor",
+        "Store Attr Color",
         (1100, 0),
+    )
+    store_attr_radius = _new_node(
+        nodes,
+        "GeometryNodeStoreNamedAttribute",
+        "StoreAttrRadius",
+        "Store Attr Radius",
+        (1300, 0),
     )
     curve_to_mesh_1 = _new_node(
         nodes,
         "GeometryNodeCurveToMesh",
         "CurveToMesh",
         "Curve to Mesh",
-        (1300, 0),
+        (1500, 0),
     )
     mesh_to_curve = _new_node(
         nodes,
         "GeometryNodeMeshToCurve",
         "MeshToCurve",
         "Mesh to Curve",
-        (1500, 0),
+        (1700, 0),
     )
     spline_type = _new_node(
         nodes,
         "GeometryNodeCurveSplineType",
         "SplineType",
         "Spline Type",
-        (1700, 0),
+        (1900, 0),
     )
     handle_type = _new_node(
         nodes,
         "GeometryNodeCurveSetHandles",
         "HandleType",
         "Handle Type",
-        (1900, 0),
+        (2100, 0),
     )
     curve_to_mesh_2 = _new_node(
         nodes,
         "GeometryNodeCurveToMesh",
         "CurveToMeshFinal",
         "Curve to Mesh Final",
-        (2100, 0),
+        (2300, 0),
     )
     circle_profile = _new_node(
         nodes,
         "GeometryNodeCurvePrimitiveCircle",
         "CircleProfile",
         "Circle Profile",
-        (1900, -300),
+        (2000.0, -300.0),
     )
     set_material = _new_node(
-        nodes, "GeometryNodeSetMaterial", "SetMaterial", "Set Material", (2200, 0)
+        nodes, "GeometryNodeSetMaterial", "SetMaterial", "Set Material", (2480.0, 0.0)
     )
 
     group_output = _new_node(
-        nodes, "NodeGroupOutput", "GroupOutput", "Group Output", (2600, 0)
+        nodes, "NodeGroupOutput", "GroupOutput", "Group Output", (2660.0, 0.0)
     )
     group_output.is_active_output = True
 
@@ -245,9 +267,39 @@ def Create_fieldline_geometry_node(
         name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
     )
 
-    for ax in "xyzt":
+    radius_attr = _new_node(
+        nodes,
+        "GeometryNodeInputNamedAttribute",
+        "AttrRadius",
+        "Attr Radius",
+        (1900.0, 280.0),
+    )
+    radius_attr.data_type = "FLOAT"
+    radius_attr.inputs[0].default_value = "thickness"
+
+    radius_index = _new_node(
+        nodes, "GeometryNodeInputIndex", "RadiusIndex", "Radius Index", (1900.0, 120.0)
+    )
+
+    radius_sample = _new_node(
+        nodes,
+        "GeometryNodeSampleIndex",
+        "SampleRadius",
+        "Sample radius",
+        (2100.0, 220.0),
+    )
+    radius_sample.data_type = "FLOAT"
+    radius_sample.domain = "POINT"
+
+    radius_switch = _new_node(
+        nodes, "GeometryNodeSwitch", "RadiusSwitch", "Radius Switch", (2000.0, -140.0)
+    )
+    radius_switch.input_type = "FLOAT"
+    radius_switch.inputs["False"].default_value = 1.0
+
+    for ax in ["x", "y", "z", "color", "thickness"]:
         xyz_attrs[ax].data_type = "FLOAT"
-        xyz_attrs[ax].inputs[0].default_value = ax if ax != "t" else "mag"
+        xyz_attrs[ax].inputs[0].default_value = ax
         xyz_sample[ax].data_type = "FLOAT"
         xyz_sample[ax].domain = "POINT"
         _link_if_missing(objinfo.outputs["Geometry"], xyz_sample[ax].inputs["Geometry"])
@@ -265,15 +317,30 @@ def Create_fieldline_geometry_node(
     _link_if_missing(domain_size.outputs["Point Count"], points.inputs["Count"])
     _link_if_missing(combine_xyz.outputs["Vector"], points.inputs["Position"])
     _link_if_missing(points.outputs["Points"], points_to_curves.inputs["Points"])
-    _link_if_missing(
-        points_to_curves.outputs["Curves"], store_attr_t.inputs["Geometry"]
-    )
-    store_attr_t.data_type = "FLOAT"
-    store_attr_t.domain = "POINT"
-    store_attr_t.inputs["Name"].default_value = "mag"
 
-    _link_if_missing(xyz_sample["t"].outputs["Value"], store_attr_t.inputs["Value"])
-    _link_if_missing(store_attr_t.outputs["Geometry"], curve_to_mesh_1.inputs["Curve"])
+    _link_if_missing(
+        points_to_curves.outputs["Curves"], store_attr_color.inputs["Geometry"]
+    )
+    store_attr_color.data_type = "FLOAT"
+    store_attr_color.domain = "POINT"
+    store_attr_color.inputs["Name"].default_value = "color"
+    _link_if_missing(
+        xyz_sample["color"].outputs["Value"], store_attr_color.inputs["Value"]
+    )
+
+    _link_if_missing(
+        store_attr_color.outputs["Geometry"], store_attr_radius.inputs["Geometry"]
+    )
+    store_attr_radius.data_type = "FLOAT"
+    store_attr_radius.domain = "POINT"
+    store_attr_radius.inputs["Name"].default_value = "thickness"
+
+    _link_if_missing(
+        xyz_sample["thickness"].outputs["Value"], store_attr_radius.inputs["Value"]
+    )
+    _link_if_missing(
+        store_attr_radius.outputs["Geometry"], curve_to_mesh_1.inputs["Curve"]
+    )
     _link_if_missing(curve_to_mesh_1.outputs["Mesh"], mesh_to_curve.inputs["Mesh"])
     _link_if_missing(mesh_to_curve.outputs["Curve"], spline_type.inputs["Curve"])
     spline_type.spline_type = "BEZIER"
@@ -290,29 +357,32 @@ def Create_fieldline_geometry_node(
     set_material.inputs["Material"].default_value = material
     _link_if_missing(set_material.outputs["Geometry"], group_output.inputs[0])
 
-    objinfo.inputs["Object"].default_value = raw_obj
+    _link_if_missing(radius_attr.outputs["Attribute"], radius_sample.inputs["Value"])
+    _link_if_missing(radius_index.outputs["Index"], radius_sample.inputs["Index"])
+    _link_if_missing(spline_type.outputs["Curve"], radius_sample.inputs["Geometry"])
+    _link_if_missing(radius_sample.outputs["Value"], radius_switch.inputs["True"])
+    _link_if_missing(radius_switch.outputs["Output"], curve_to_mesh_2.inputs["Scale"])
+    _link_if_missing(
+        group_input.outputs["ModulateRadius"], radius_switch.inputs["Switch"]
+    )
 
-    RADIUS_VALUE = 0.01
-    modifier = obj.modifiers.get("GeometryNodes")
-    if modifier and modifier.node_group is nt:
-        if ident := getattr(radius_socket, "identifier", None):
-            modifier[ident] = RADIUS_VALUE
+    objinfo.inputs["Object"].default_value = raw_obj
 
     return nt
 
 
 def Create_fieldline_controller(collection: bpy.types.Collection):
-    controller = bpy.data.objects.get("FieldlineController")
-    if controller is None:
-        controller = bpy.data.objects.new("FieldlineController", None)
-        controller.empty_display_type = "SPHERE"
-        collection.objects.link(controller)
+    if "Radius" not in collection.keys():
+        collection["Radius"] = 0.01
+    ui = collection.id_properties_ui("Radius")
+    ui.update(min=0.0, soft_min=0.0, soft_max=1.0, description="Fieldline radius")
 
-    if "Radius" not in controller.keys():
-        controller["Radius"] = 0.01
-        ui = controller.id_properties_ui("Radius")
-        ui.update(min=0.0, soft_min=0.0, soft_max=1.0, description="Master Radius")
+    if "ModulateRadius" not in collection.keys():
+        collection["ModulateRadius"] = True
+    ui = collection.id_properties_ui("ModulateRadius")
+    ui.update(description="Modulate fieldline radii")
 
+    # Helpers
     def gn_modifiers(obj):
         return [
             m
@@ -320,14 +390,13 @@ def Create_fieldline_controller(collection: bpy.types.Collection):
             if m.type == "NODES" and getattr(m, "node_group", None) is not None
         ]
 
-    def radius_keys_from_interface(gn_mod):
-        candidates = ["Radius"]
-
+    def keys_from_interface(name, gn_mod):
+        candidates = [name]
         ng = getattr(gn_mod, "node_group", None)
         if ng and hasattr(ng, "interface"):
             try:
                 for item in ng.interface.items_tree:
-                    if getattr(item, "name", None) == "Radius":
+                    if getattr(item, "name", None) == name:
                         ident = getattr(item, "identifier", None)
                         if ident:
                             candidates.append(ident)
@@ -342,8 +411,8 @@ def Create_fieldline_controller(collection: bpy.types.Collection):
                 dedup.append(k)
         return dedup
 
-    def add_driver_to_radius(gn_mod, controller, prop_name="Radius"):
-        candidates = radius_keys_from_interface(gn_mod)
+    def add_driver_to(gn_mod, target_coll, prop_name):
+        candidates = keys_from_interface(prop_name, gn_mod)
         present = [k for k in candidates if k in gn_mod.keys()]
         if not present:
             return False
@@ -351,28 +420,38 @@ def Create_fieldline_controller(collection: bpy.types.Collection):
         key = present[0]
         data_path = f'["{key}"]'
 
+        # Remove any existing driver first
         try:
             gn_mod.driver_remove(data_path)
-        except:
+        except Exception:
             pass
 
         drv = gn_mod.driver_add(data_path).driver
         drv.type = "SCRIPTED"
+
+        # Clear variables (avoid duplicates if re-running)
+        while drv.variables:
+            drv.variables.remove(drv.variables[0])
+
         v = drv.variables.new()
         v.name = "x"
-        v.targets[0].id = controller
-        v.targets[0].data_path = f'["{prop_name}"]'
+        v.type = "SINGLE_PROP"
+        t = v.targets[0]
+        t.id_type = "COLLECTION"  # <-- set id_type first
+        t.id = target_coll  # <-- now assigning the Collection is valid
+        t.data_path = f'["{prop_name}"]'
+
         drv.expression = "x"
         return True
 
+    # Wire up all GN modifiers in the collection to the collection properties
     for obj in collection.objects:
-        if obj == controller:
-            continue
         for gn_mod in gn_modifiers(obj):
-            if not add_driver_to_radius(gn_mod, controller, "Radius"):
-                raise RuntimeError(
-                    f"Could not bind 'Radius' for {obj.name} (modifier {gn_mod.name})"
-                )
+            for prop in ["Radius", "ModulateRadius"]:
+                if not add_driver_to(gn_mod, collection, prop):
+                    raise RuntimeError(
+                        f"Could not bind '{prop}' for {obj.name} (modifier {gn_mod.name})"
+                    )
 
 
 def Create_or_reset_fieldline_material(name: str):
@@ -412,7 +491,7 @@ def Create_or_reset_fieldline_material(name: str):
         "Attribute Node",
         (-300, 0),
     )
-    attr_node.attribute_name = "mag"
+    attr_node.attribute_name = "color"
 
     color_ramp = _get_or_new(
         nodes,
