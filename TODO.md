@@ -5,6 +5,6 @@
 - [x] histogram of volume data
 - [x] add latex text labels
 - [ ] add arrows
-- [ ] add box 
-- [ ] axes ticks
+- [x] add box & ticks
+- [ ] orientation axes
 - [ ] import xyz fields to build fieldlines + seed points
