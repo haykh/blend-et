@@ -8,6 +8,8 @@ from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
     Apply_stops_to_colorramp,
 )
 
+from ..utilities.nodes import CreateNodes  # pyright: ignore[reportMissingImports]
+
 
 def Create_or_reset_volume_material(name) -> bpy.types.Material:
     mat = bpy.data.materials.get(name)
@@ -23,74 +25,85 @@ def Create_or_reset_volume_material(name) -> bpy.types.Material:
 
     if (nt := mat.node_tree) is None:
         raise RuntimeError("Failed to access node tree of material")
-    nodes = nt.nodes
-    links = nt.links
 
-    def _get_or_new(nodes, type_id, name=None, label=None):
-        n = nodes.get(name) if name else None
-        if n is None:
-            n = nodes.new(type_id)
-            if name:
-                n.name = name
-            if label:
-                n.label = label
-        return n
-
-    vol_info = _get_or_new(nodes, "ShaderNodeVolumeInfo", "VolumeInfo", "Volume info")
-    vol_info.location = (-50, -100)
-
-    map_range = _get_or_new(nodes, "ShaderNodeMapRange", "ValueRemap", "Remap values")
-    map_range.location = (150, 0)
-
-    color_ramp = _get_or_new(nodes, "ShaderNodeValToRGB", "Colormap", "Colormap")
-    color_ramp.location = (400, 300)
-
-    float_curve = _get_or_new(
-        nodes, "ShaderNodeFloatCurve", "OpacityCurve", "Opacity curve"
+    all_nodes = CreateNodes(
+        node_kwargs=[
+            [
+                {
+                    "type_id": "ShaderNodeVolumeInfo",
+                    "label": "Volume Info",
+                },
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeMapRange",
+                    "label": "Remap Values",
+                }
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeValToRGB",
+                    "label": "Colormap",
+                    "width": 2,
+                    "height": 1.5,
+                },
+                {
+                    "type_id": "ShaderNodeFloatCurve",
+                    "label": "Opacity Curve",
+                    "height": 2,
+                },
+                {
+                    "type_id": "ShaderNodeMath",
+                    "label": "Emissivity Multiplier",
+                    "operation": "MULTIPLY",
+                    "input_defaults": {1: 2.0},
+                },
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeMath",
+                    "label": "Opacity Multiplier",
+                    "operation": "MULTIPLY",
+                    "input_defaults": {1: 1.0},
+                }
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeVolumePrincipled",
+                    "label": "Volume Shader",
+                    "width": 2,
+                }
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeOutputMaterial",
+                    "label": "Material Output",
+                }
+            ],
+        ],
+        node_links=[
+            (("VolumeInfo", "Density"), ("RemapValues", "Value")),
+            (("RemapValues", "Result"), ("Colormap", "Fac")),
+            (("RemapValues", "Result"), ("OpacityCurve", "Value")),
+            (("RemapValues", "Result"), ("EmissivityMultiplier", "Value")),
+            (("OpacityCurve", "Value"), ("OpacityMultiplier", "Value")),
+            (("Colormap", "Color"), ("VolumeShader", "Color")),
+            (("Colormap", "Color"), ("VolumeShader", "Emission Color")),
+            (
+                ("EmissivityMultiplier", "Value"),
+                ("VolumeShader", "Emission Strength"),
+            ),
+            (("OpacityMultiplier", "Value"), ("VolumeShader", "Density")),
+            (("VolumeShader", "Volume"), ("MaterialOutput", "Volume")),
+        ],
+        node_tree=nt,
+        clear=False,
     )
-    float_curve.location = (400, 0)
-
-    multiply_1 = _get_or_new(
-        nodes, "ShaderNodeMath", "MultiplyEmissivity", "Emissivity multiplier"
-    )
-    multiply_1.location = (400, -400)
-    multiply_1.operation = "MULTIPLY"
-    multiply_1.inputs[1].default_value = 2.0
-
-    multiply_2 = _get_or_new(
-        nodes, "ShaderNodeMath", "MultiplyOpacity", "Opacity multiplier"
-    )
-    multiply_2.location = (800, 0)
-    multiply_2.operation = "MULTIPLY"
-    multiply_2.inputs[1].default_value = 1.0
-
-    vol = _get_or_new(nodes, "ShaderNodeVolumePrincipled", "Volume", "Volume shader")
-    vol.location = (1100, 100)
-
-    out = _get_or_new(
-        nodes, "ShaderNodeOutputMaterial", "MaterialOutput", "Material Output"
-    )
-    out.location = (1400, 100)
-
-    def _link_if_missing(a, b):
-        if not b.links or all(l.from_socket is not a for l in b.links):
-            links.new(a, b)
-
-    _link_if_missing(vol_info.outputs["Density"], map_range.inputs["Value"])
-    _link_if_missing(map_range.outputs["Result"], color_ramp.inputs["Fac"])
-    _link_if_missing(map_range.outputs["Result"], float_curve.inputs["Value"])
-    _link_if_missing(map_range.outputs["Result"], multiply_1.inputs[0])
-    _link_if_missing(float_curve.outputs["Value"], multiply_2.inputs[0])
-    _link_if_missing(color_ramp.outputs["Color"], vol.inputs["Color"])
-    _link_if_missing(color_ramp.outputs["Color"], vol.inputs["Emission Color"])
-    _link_if_missing(multiply_1.outputs["Value"], vol.inputs["Emission Strength"])
-    _link_if_missing(multiply_2.outputs["Value"], vol.inputs["Density"])
-    _link_if_missing(vol.outputs["Volume"], out.inputs["Volume"])
 
     cm_id = Resolve_cmap_id(getattr(mat, "volume_colormap", 0))
     rev = bool(getattr(mat, "volume_colormap_reversed", False))
     Apply_stops_to_colorramp(
-        color_ramp.color_ramp, Stops_for_colormap(cm_id, reverse=rev)
+        all_nodes["Colormap"].color_ramp, Stops_for_colormap(cm_id, reverse=rev)
     )
 
     return mat
