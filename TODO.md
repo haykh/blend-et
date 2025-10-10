@@ -4,7 +4,7 @@
 - [x] crop volume
 - [x] histogram of volume data
 - [x] add latex text labels
-- [ ] add arrows
 - [x] add box & ticks
+- [x] import xyz fields to build fieldlines + seed points
+- [ ] add arrows
 - [ ] orientation axes
-- [ ] import xyz fields to build fieldlines + seed points

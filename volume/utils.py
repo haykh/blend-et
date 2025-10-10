@@ -81,6 +81,7 @@ def Create_or_reset_volume_material(name) -> bpy.types.Material:
                 }
             ],
         ],
+        socket_kwargs=[],
         node_links=[
             (("VolumeInfo", "Density"), ("RemapValues", "Value")),
             (("RemapValues", "Result"), ("Colormap", "Fac")),

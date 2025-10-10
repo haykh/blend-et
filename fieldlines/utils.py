@@ -28,10 +28,23 @@ def Create_raw_data_fieldline(
     if collection is None:
         collection_ = bpy.data.collections.new("FieldlinesRaw")
         scene.collection.children.link(collection_)
-        collection_.hide_viewport = True
-        collection_.hide_render = True
     else:
         collection_ = collection
+    collection_.hide_viewport = True
+    collection_.hide_render = True
+
+    def _find_layer_collection(layer_coll, target_coll):
+        if layer_coll.collection == target_coll:
+            return layer_coll
+        for ch in layer_coll.children:
+            f = _find_layer_collection(ch, target_coll)
+            if f:
+                return f
+        return None
+
+    for vl in scene.view_layers:
+        if lc := _find_layer_collection(vl.layer_collection, collection_):
+            lc.exclude = True
 
     mesh = bpy.data.meshes.new(f"FieldlineRawMesh_{i}")
     obj = bpy.data.objects.new(f"FieldlineRawObj_{i}", mesh)
@@ -59,8 +72,9 @@ def Create_raw_data_fieldline(
 def Create_fieldline_geometry(
     context: bpy.types.Context,
     raw_collection: bpy.types.Collection | None = None,
+    material: bpy.types.Material | None = None,
     uuid_str: str = "",
-):
+) -> bpy.types.Object:
     suffix = f"_{uuid_str}" if uuid_str != "" else ""
 
     bpy.ops.object.volume_add(align="WORLD")
@@ -79,6 +93,9 @@ def Create_fieldline_geometry(
         n.capture_items.clear()
         n.capture_items.new("FLOAT", "Index")
         n.capture_items["Index"].data_type = "INT"
+
+    def _modify_modulate_switch(n):
+        n.inputs[1].default_value = 1.0
 
     CreateNodes(
         node_kwargs=[
@@ -117,20 +134,20 @@ def Create_fieldline_geometry(
             [
                 {
                     "type_id": "GeometryNodeInputNamedAttribute",
-                    "label": f"Attr {xyz.upper()}",
+                    "label": f"Attr {xyzt.upper()}",
                     "data_type": "FLOAT",
-                    "input_defaults": {0: xyz},
+                    "input_defaults": {0: xyzt},
                 }
-                for xyz in "xyz"
+                for xyzt in ["x", "y", "z", "thickness", "color"]
             ],
             [
                 {
                     "type_id": "GeometryNodeSampleIndex",
-                    "label": f"Sample {xyz.upper()}",
+                    "label": f"Sample {xyzt.upper()}",
                     "domain": "POINT",
                     "data_type": "FLOAT",
                 }
-                for xyz in "xyz"
+                for xyzt in ["x", "y", "z", "thickness", "color"]
             ],
             [
                 {
@@ -144,12 +161,6 @@ def Create_fieldline_geometry(
                     "type_id": "GeometryNodeMeshToPoints",
                     "label": "Convert To Points",
                     "mode": "VERTICES",
-                }
-            ],
-            [
-                {
-                    "type_id": "GeometryNodePointsToCurves",
-                    "label": "Points To Curves",
                 },
                 {
                     "type_id": "NodeGroupInput",
@@ -158,14 +169,42 @@ def Create_fieldline_geometry(
             ],
             [
                 {
-                    "type_id": "GeometryNodeCurveToMesh",
-                    "label": "Curves To Mesh",
-                    "input_defaults": {"Fill Caps": True, "Scale": 1.0},
+                    "type_id": "GeometryNodePointsToCurves",
+                    "label": "Points To Curves",
+                },
+                {
+                    "type_id": "GeometryNodeSwitch",
+                    "label": "Modulate Thickness",
+                    "input_type": "FLOAT",
+                    "extra": _modify_modulate_switch,
+                },
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeStoreNamedAttribute",
+                    "label": "Store Color",
+                    "data_type": "FLOAT",
+                    "domain": "POINT",
+                    "input_defaults": {2: "color_modulate"},
                 },
                 {
                     "type_id": "GeometryNodeCurvePrimitiveCircle",
                     "label": "Circle Profile",
                     "mode": "RADIUS",
+                },
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeCurveToMesh",
+                    "label": "Curves To Mesh",
+                    "input_defaults": {"Fill Caps": True, "Scale": 1.0},
+                },
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeSetMaterial",
+                    "label": "Set Material",
+                    "input_defaults": {"Material": material},
                 },
             ],
             [
@@ -195,6 +234,12 @@ def Create_fieldline_geometry(
                 "subtype": "DISTANCE",
                 "description": "Circle profile maximum radius",
             },
+            {
+                "name": "Modulate Thickness",
+                "in_out": "INPUT",
+                "type": "NodeSocketBool",
+                "description": "Enable or disable thickness modulation",
+            },
         ],
         node_links=[
             (("RawFieldlines", "Instances"), ("CaptureFieldlineIndex", "Geometry")),
@@ -204,30 +249,45 @@ def Create_fieldline_geometry(
             (("RealizeFieldlines", "Geometry"), ("SampleX", "Geometry")),
             (("RealizeFieldlines", "Geometry"), ("SampleY", "Geometry")),
             (("RealizeFieldlines", "Geometry"), ("SampleZ", "Geometry")),
+            (("RealizeFieldlines", "Geometry"), ("SampleTHICKNESS", "Geometry")),
+            (("RealizeFieldlines", "Geometry"), ("SampleCOLOR", "Geometry")),
             (("AttrX", "Attribute"), ("SampleX", "Value")),
             (("AttrY", "Attribute"), ("SampleY", "Value")),
             (("AttrZ", "Attribute"), ("SampleZ", "Value")),
+            (("AttrTHICKNESS", "Attribute"), ("SampleTHICKNESS", "Value")),
+            (("AttrCOLOR", "Attribute"), ("SampleCOLOR", "Value")),
             (("PointIndex", "Index"), ("SampleX", "Index")),
             (("PointIndex", "Index"), ("SampleY", "Index")),
             (("PointIndex", "Index"), ("SampleZ", "Index")),
+            (("PointIndex", "Index"), ("SampleTHICKNESS", "Index")),
+            (("PointIndex", "Index"), ("SampleCOLOR", "Index")),
             (("SampleX", "Value"), ("CombineXYZ", "X")),
             (("SampleY", "Value"), ("CombineXYZ", "Y")),
             (("SampleZ", "Value"), ("CombineXYZ", "Z")),
+            (("SampleTHICKNESS", "Value"), ("ModulateThickness", "True")),
+            (("SampleCOLOR", "Value"), ("StoreColor", "Value")),
+            (("ModulateThickness", "Output"), ("CurvesToMesh", "Scale")),
             (("CombineXYZ", "Vector"), ("PointPositions", "Position")),
             (("PointPositions", "Geometry"), ("ConvertToPoints", "Mesh")),
             (("ConvertToPoints", "Points"), ("PointsToCurves", "Points")),
             (("CaptureFieldlineIndex", "Index"), ("PointsToCurves", "Curve Group ID")),
-            (("PointsToCurves", "Curves"), ("CurvesToMesh", "Curve")),
+            (("PointsToCurves", "Curves"), ("StoreColor", "Geometry")),
+            (("StoreColor", "Geometry"), ("CurvesToMesh", "Curve")),
             (("GroupInput", "Resolution"), ("CircleProfile", "Resolution")),
             (("GroupInput", "Radius"), ("CircleProfile", "Radius")),
+            (("GroupInput", "Modulate Thickness"), ("ModulateThickness", "Switch")),
             (("CircleProfile", "Curve"), ("CurvesToMesh", "Profile Curve")),
-            (("CurvesToMesh", "Mesh"), ("GroupOutput", "Geometry")),
+            (("CurvesToMesh", "Mesh"), ("SetMaterial", "Geometry")),
+            (("SetMaterial", "Geometry"), ("GroupOutput", "Geometry")),
         ],
         node_tree=nt,
         clear=True,
     )
     obj.modifiers["GeometryNodes"]["Socket_1"] = 8
     obj.modifiers["GeometryNodes"]["Socket_2"] = 0.5
+    obj.modifiers["GeometryNodes"]["Socket_3"] = True
+
+    return obj
 
 
 def Create_or_reset_fieldline_material(name: str):
@@ -242,71 +302,56 @@ def Create_or_reset_fieldline_material(name: str):
         if not mat.use_nodes:
             mat.use_nodes = True
 
-    if (nt := mat.node_tree) is None:
+    if mat.node_tree is None:
         raise RuntimeError("Failed to access node tree of material")
-    nodes = nt.nodes
-    links = nt.links
 
-    def _get_or_new(nodes, type_id, name=None, label=None, location=None):
-        n = nodes.get(name) if name else None
-        if n is None:
-            n = nodes.new(type_id)
-            if name:
-                n.name = name
-            if label:
-                n.label = label
-            if location:
-                n.location = location
-        return n
-
-    # Attribute node
-    attr_node = _get_or_new(
-        nodes,
-        "ShaderNodeAttribute",
-        "AttrNode",
-        "Attribute Node",
-        (-300, 0),
+    nodes = CreateNodes(
+        node_kwargs=[
+            [
+                {
+                    "type_id": "ShaderNodeAttribute",
+                    "label": "Geometry Attribute",
+                    "attribute_name": "color_modulate",
+                },
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeValToRGB",
+                    "label": "Colormap",
+                    "width": 2,
+                }
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeBsdfPrincipled",
+                    "label": "Principled BSDF",
+                    "input_defaults": {"Roughness": 1.0, "Emission Strength": 0.25},
+                    "width": 2,
+                }
+            ],
+            [
+                {
+                    "type_id": "ShaderNodeOutputMaterial",
+                    "label": "Material Output",
+                    "is_active_output": True,
+                }
+            ],
+        ],
+        socket_kwargs=[],
+        node_links=[
+            (("GeometryAttribute", "Fac"), ("Colormap", "Fac")),
+            (("Colormap", "Color"), ("PrincipledBSDF", "Base Color")),
+            (("Colormap", "Color"), ("PrincipledBSDF", "Emission Color")),
+            (("PrincipledBSDF", "BSDF"), ("MaterialOutput", "Surface")),
+        ],
+        node_tree=mat.node_tree,
+        clear=False,
     )
-    attr_node.attribute_name = "color"
-
-    color_ramp = _get_or_new(
-        nodes,
-        "ShaderNodeValToRGB",
-        "Colormap",
-        "Colormap",
-        (0, 0),
-    )
-    principled_bsdf = _get_or_new(
-        nodes,
-        "ShaderNodeBsdfPrincipled",
-        "PrincipledBSDF",
-        "Principled BSDF",
-        (300, 0),
-    )
-    material_output = _get_or_new(
-        nodes,
-        "ShaderNodeOutputMaterial",
-        "MaterialOutput",
-        "Material Output",
-        (600, 0),
-    )
-
-    def _link_if_missing(a, b):
-        if not b.links or all(l.from_socket is not a for l in b.links):
-            links.new(a, b)
-
-    _link_if_missing(attr_node.outputs["Fac"], color_ramp.inputs["Fac"])
-    _link_if_missing(color_ramp.outputs["Color"], principled_bsdf.inputs["Base Color"])
-    _link_if_missing(
-        color_ramp.outputs["Color"], principled_bsdf.inputs["Emission Color"]
-    )
-    principled_bsdf.inputs["Emission Strength"].default_value = 0.25
-    _link_if_missing(principled_bsdf.outputs["BSDF"], material_output.inputs["Surface"])
 
     cm_id = Resolve_cmap_id(getattr(mat, "fieldline_colormap", 0))
     rev = bool(getattr(mat, "fieldline_colormap_reversed", False))
     Apply_stops_to_colorramp(
-        color_ramp.color_ramp, Stops_for_colormap(cm_id, reverse=rev)
+        nodes["Colormap"].color_ramp, Stops_for_colormap(cm_id, reverse=rev)
     )
 
     return mat

@@ -70,8 +70,7 @@ def CreateNodes(
                 for input_name, default_value in node_input_defaults.items():
                     new_node.inputs[input_name].default_value = default_value
 
-            if (extra := row.pop("extra", None)) is not None:
-                extra(new_node)
+            extra = row.pop("extra", None)
 
             for attr, value in row.items():
                 if hasattr(new_node, attr):
@@ -81,33 +80,37 @@ def CreateNodes(
                         f"Attribute '{attr}' not found in node '{node_name}'"
                     )
 
+            if extra is not None:
+                extra(new_node)
+
             all_nodes[node_name] = new_node
 
             rolling_h += node_height * hspace
 
         rolling_w += default_w * wspace
 
-    if len(socket_kwargs) > 0 and interface is not None:
-        for socket in socket_kwargs:
-            socket_name = socket.pop("name")
-            socket_in_out = socket.pop("in_out")
-            socket_type = socket.pop("type")
-            if socket_name is None or socket_in_out is None or socket_type is None:
-                raise ValueError(
-                    "Socket kwargs must include name, in_out, and type"
-                )
-            new_socket = interface.new_socket(
-                name=socket_name, in_out=socket_in_out, socket_type=socket_type
-            )
-            for attr, value in socket.items():
-                if hasattr(new_socket, attr):
-                    setattr(new_socket, attr, value)
-                else:
-                    raise KeyError(
-                        f"Attribute '{attr}' not found in socket '{socket_name}'"
+    if len(socket_kwargs) > 0:
+        if interface is not None:
+            for socket in socket_kwargs:
+                socket_name = socket.pop("name")
+                socket_in_out = socket.pop("in_out")
+                socket_type = socket.pop("type")
+                if socket_name is None or socket_in_out is None or socket_type is None:
+                    raise ValueError(
+                        "Socket kwargs must include name, in_out, and type"
                     )
-    else:
-        raise ValueError("No socket kwargs provided or node tree has no interface")
+                new_socket = interface.new_socket(
+                    name=socket_name, in_out=socket_in_out, socket_type=socket_type
+                )
+                for attr, value in socket.items():
+                    if hasattr(new_socket, attr):
+                        setattr(new_socket, attr, value)
+                    else:
+                        raise KeyError(
+                            f"Attribute '{attr}' not found in socket '{socket_name}'"
+                        )
+        else:
+            raise ValueError("node tree has no interface")
 
     for link in node_links:
         a_id, b_id = link

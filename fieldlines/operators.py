@@ -4,9 +4,6 @@ from .utils import (
     Create_raw_data_fieldline,
     Create_or_reset_fieldline_material,
     Create_fieldline_geometry,
-    # Create_fieldline_mesh,
-    # Create_fieldline_geometry_node,
-    # Create_fieldline_controller,
     On_material_colormap_change,
 )
 
@@ -35,13 +32,8 @@ class Fieldlines_Create(bpy.types.Operator):
         raw_collection.hide_select = True
         scene.collection.children.link(raw_collection)
 
-        # bpy.ops.collection.create(name=f"Fieldlines_{uuid_str}")
-        # collection = bpy.data.collections[f"Fieldlines_{uuid_str}"]
-        # scene.collection.children.link(collection)
-
         material = Create_or_reset_fieldline_material(f"FieldlinesMaterial_{uuid_str}")
 
-        # identify keys:
         npz_data = np.load(props.npz_path)
         fx_str, fy_str, fz_str = None, None, None
         for k in npz_data.keys():
@@ -65,17 +57,32 @@ class Fieldlines_Create(bpy.types.Operator):
 
         maxnorm = np.sqrt(np.max(fx_data**2 + fy_data**2 + fz_data**2))
 
-        seed_ys = np.linspace(0.5, sy - 0.5, 10)
-        seed_zs = np.linspace(0.5, sz - 0.5, 10)
-        seed_ys, seed_zs = np.meshgrid(seed_ys, seed_zs, indexing="ij")
-        seed_points = np.vstack(
-            [np.full(seed_ys.size, 0.5), seed_ys.ravel(), seed_zs.ravel()]
-        ).T
+        if props.seed_points == "XY":
+            seed_xs = np.linspace(0.5, sx - 0.5, props.seed_resolution[0])
+            seed_ys = np.linspace(0.5, sy - 0.5, props.seed_resolution[1])
+            seed_xs, seed_ys = np.meshgrid(seed_xs, seed_ys, indexing="ij")
+            seed_zs = np.full(seed_xs.size, props.seed_displacement)
+        elif props.seed_points == "XZ":
+            seed_xs = np.linspace(0.5, sx - 0.5, props.seed_resolution[0])
+            seed_zs = np.linspace(0.5, sz - 0.5, props.seed_resolution[1])
+            seed_xs, seed_zs = np.meshgrid(seed_xs, seed_zs, indexing="ij")
+            seed_ys = np.full(seed_xs.size, props.seed_displacement)
+        elif props.seed_points == "YZ":
+            seed_ys = np.linspace(0.5, sy - 0.5, props.seed_resolution[0])
+            seed_zs = np.linspace(0.5, sz - 0.5, props.seed_resolution[1])
+            seed_ys, seed_zs = np.meshgrid(seed_ys, seed_zs, indexing="ij")
+            seed_xs = np.full(seed_ys.size, props.seed_displacement)
+        elif props.seed_points == "Custom":
+            self.report({"ERROR"}, "Custom seed points not implemented yet")
+            return {"CANCELLED"}
+        else:
+            self.report({"ERROR"}, "Invalid seed points option")
+            return {"CANCELLED"}
+
+        seed_points = np.vstack([seed_xs.ravel(), seed_ys.ravel(), seed_zs.ravel()]).T
+
         nfieldlines = seed_points.shape[0]
 
-        # seed_points = np.column_stack([seed_ys.ravel(), seed_zs.ravel()])
-
-        # nfieldlines = 5
         for i in range(nfieldlines):
             xline, yline, zline, magline = (
                 np.array([]),
@@ -83,86 +90,70 @@ class Fieldlines_Create(bpy.types.Operator):
                 np.array([]),
                 np.array([]),
             )
-            ds = 0.25
-            MAXITER = 2000
+            ds = props.integration_step
+            MAXITER = props.integration_maxiter
+            if props.integration_direction == "Plus":
+                signs = [+1]
+            elif props.integration_direction == "Minus":
+                signs = [-1]
+            else:  # Both
+                signs = [+1, -1]
 
-            # for sign in [-1]:
-            xl, yl, zl, magl = (
-                np.array([]),
-                np.array([]),
-                np.array([]),
-                np.array([]),
-            )
-            x, y, z = seed_points[i, :]
-            iter = 0
-            while iter < MAXITER and (
-                0 <= x < sx - 1 and 0 <= y < sy - 1 and 0 <= z < sz - 1
-            ):
-                ix, iy, iz = int(x), int(y), int(z)
-                fx = fx_data[iz, iy, ix]
-                fy = fy_data[iz, iy, ix]
-                fz = fz_data[iz, iy, ix]
-                norm = (fx**2 + fy**2 + fz**2) ** 0.5
-                if norm < 1e-8:
-                    break
-                x += (ds * fx) / norm
-                y += (ds * fy) / norm
-                z += (ds * fz) / norm
-                xl = np.append(xl, x)
-                yl = np.append(yl, y)
-                zl = np.append(zl, z)
-                magl = np.append(magl, norm)
-                iter += 1
+            for sign in signs:
+                xl, yl, zl, magl = (
+                    np.array([]),
+                    np.array([]),
+                    np.array([]),
+                    np.array([]),
+                )
+                x, y, z = seed_points[i, :]
+                iter = 0
+                while iter < MAXITER and (
+                    0 <= x < sx - 1 and 0 <= y < sy - 1 and 0 <= z < sz - 1
+                ):
+                    ix, iy, iz = int(x), int(y), int(z)
+                    fx = fx_data[iz, iy, ix]
+                    fy = fy_data[iz, iy, ix]
+                    fz = fz_data[iz, iy, ix]
+                    norm = (fx**2 + fy**2 + fz**2) ** 0.5
+                    if norm < 1e-8:
+                        break
+                    x += sign * (ds * fx) / norm
+                    y += sign * (ds * fy) / norm
+                    z += sign * (ds * fz) / norm
+                    xl = np.append(xl, x)
+                    yl = np.append(yl, y)
+                    zl = np.append(zl, z)
+                    magl = np.append(magl, norm)
+                    iter += 1
 
-                # if sign == -1:
-                #     xline = xl.copy()
-                #     yline = yl.copy()
-                #     zline = zl.copy()
-                #     magline = magl.copy()
-                # else:
-                #     xline = np.concatenate((xl[::-1], xline))
-                #     yline = np.concatenate((yl[::-1], yline))
-                #     zline = np.concatenate((zl[::-1], zline))
-                #     magline = np.concatenate((magl[::-1], magline))
-
-            # if len(xline) < 2:
-            #     continue
-            # npoints = 100
-            # zs = np.linspace(0, 10, npoints)
-            # rs = np.linspace(0, 100, npoints) ** 0.5
-
-            # phis = np.linspace(0, 6 * np.pi, npoints)
-
-            # xs = rs * np.sin(phis) + 5 * i
-            # ys = rs * np.cos(phis)
-
-            # ts = 1 + 0.5 * np.sin(5 * phis)
+                if sign == +1:
+                    xline = np.append(xl[::-1], xline)
+                    yline = np.append(yl[::-1], yline)
+                    zline = np.append(zl[::-1], zline)
+                    magline = np.append(magl[::-1], magline)
+                else:
+                    xline = np.append(xline, xl)
+                    yline = np.append(yline, yl)
+                    zline = np.append(zline, zl)
+                    magline = np.append(magline, magl)
 
             Create_raw_data_fieldline(
                 {
-                    "x": xl,
-                    "y": yl,
-                    "z": zl,
-                    "color": magl / maxnorm,
-                    "thickness": magl / maxnorm,
+                    "x": xline,
+                    "y": yline,
+                    "z": zline,
+                    "color": magline / maxnorm,
+                    "thickness": magline / maxnorm,
                 },
                 context,
                 raw_collection,
                 i,
             )
-            # mesh, _ = Create_fieldline_mesh(context, collection, i)
-            # obj.parent = mesh
-            # mesh.scale = (0.01, 0.01, 0.01)
-            # Create_fieldline_geometry_node(mesh, obj, material, context)
 
-            # if mesh.data is not None:
-            #     if len(mesh.data.materials) == 0:
-            #         mesh.data.materials.append(material)
-            #     else:
-            #         mesh.data.materials[0] = material
-
-        Create_fieldline_geometry(context, raw_collection, uuid_str)
-        # Create_fieldline_controller(collection)
+        mesh = Create_fieldline_geometry(context, raw_collection, material, uuid_str)
+        mesh.active_material = material
+        mesh.scale = (0.01, 0.01, 0.01)
 
         return {"FINISHED"}
 

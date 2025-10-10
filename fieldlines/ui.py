@@ -59,5 +59,29 @@ class Fieldlines_Panel_3DV(bpy.types.Panel):
             return
         props = scene.blend_et_fieldlines
         layout.label(text="NumPy → Fieldlines (.npz)")
+        layout.label(
+            text="Coordinates are in units of the number of cells", icon="INFO"
+        )
+
         layout.prop(props, "npz_path")
+
+        layout.prop(props, "field_prefix")
+
+        box = layout.box()
+        box.label(text="Integration settings", icon="MOD_CURVE")
+        box.row().prop(props, "integration_direction")
+        box.row().prop(props, "integration_step")
+        box.row().prop(props, "integration_maxiter")
+
+        layout.prop(props, "seed_points")
+
+        box = layout.box()
+        box.label(text="Seed points settings", icon="PARTICLES")
+        if props.seed_points == "Custom":
+            box.row().prop(props, "custom_seed_label")
+        elif props.seed_points in ["XY", "XZ", "YZ"]:
+            box.row().prop(props, "seed_resolution")
+            box.row().prop(props, "seed_displacement")
+
+        layout.separator()
         layout.operator("blend_et.fieldlines_create", icon="CURVES")
