@@ -11,3 +11,4 @@ class Annotations_Panel_3DV(bpy.types.Panel):
         if (layout := self.layout) is None:
             return
         layout.operator("blend_et.annotations_add_axes_grid", icon="MESH_GRID")
+        layout.operator("blend_et.annotations_add_arrow", icon="ARROW_LEFTRIGHT")

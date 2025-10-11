@@ -3,10 +3,15 @@ import bpy
 
 def classes():
     from .props import Annotations_Props
-    from .operators import Annotations_AddAxesGrid
+    from .operators import Annotations_AddAxesGrid, Annotations_AddArrow
     from .ui import Annotations_Panel_3DV
 
-    return (Annotations_Props, Annotations_AddAxesGrid, Annotations_Panel_3DV)
+    return (
+        Annotations_Props,
+        Annotations_AddAxesGrid,
+        Annotations_AddArrow,
+        Annotations_Panel_3DV,
+    )
 
 
 def register():
