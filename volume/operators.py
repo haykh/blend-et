@@ -193,7 +193,7 @@ class Volume_ImportNumpy(bpy.types.Operator):
             "YXZ": (1, 0, 2),
         }
         axes = order_map.get(props.numpy_axis_order, (0, 1, 2))
-        arr = np.transpose(arr, axes).astype(np.float64, copy=False)
+        arr = np.transpose(arr, axes).astype(np.float64, copy=False).T
         arr = np.nan_to_num(arr, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
 
         _hist, _q05, _q95, _vmin, _vmax = _compute_histogram_np(arr, bins=128)
@@ -211,7 +211,8 @@ class Volume_ImportNumpy(bpy.types.Operator):
             )
             return {"CANCELLED"}
 
-        grid = vdb.DoubleGrid()
+        arr = np.ascontiguousarray(arr)
+        grid = vdb.FloatGrid()
         grid.name = "density"
         grid.copyFromArray(arr)
 
