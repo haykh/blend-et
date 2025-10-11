@@ -6,5 +6,5 @@
 - [x] add latex text labels
 - [x] add box & ticks
 - [x] import xyz fields to build fieldlines + seed points
-- [ ] add arrows
-- [ ] orientation axes
+- [x] add arrows
+- [x] orientation axes

@@ -1498,9 +1498,324 @@ def Arrow_geometry_node(mat: bpy.types.Material) -> bpy.types.NodeTree:
             (("Switch", "Output"), ("SmoothShade", "Geometry")),
             (("SmoothShade", "Geometry"), ("SetMaterial", "Geometry")),
             (("SetMaterial", "Geometry"), ("GroupOutput", "Geometry")),
-        ],  # pyright: ignore[reportArgumentType]
+        ],
         node_tree=arrow_obj,
         clear=True,
     )
 
     return arrow_obj
+
+
+def Origin_axes_node(mat: bpy.types.Material | None = None) -> bpy.types.NodeTree:
+    def generate_axis_arrow():
+        axis = bpy.data.node_groups.new(type="GeometryNodeTree", name="Axis")
+
+        CreateNodes(
+            node_kwargs=[
+                [
+                    {
+                        "type_id": "NodeGroupInput",
+                        "label": "Group Input",
+                    },
+                ],
+                [
+                    {
+                        "type_id": "GeometryNodeMeshCylinder",
+                        "label": "Cylinder",
+                    },
+                    {
+                        "type_id": "GeometryNodeSetPosition",
+                        "label": "CylinderPosition",
+                    },
+                    {
+                        "type_id": "ShaderNodeCombineXYZ",
+                        "label": "Cylinder Z Offset",
+                    },
+                    {
+                        "type_id": "ShaderNodeMath",
+                        "label": "Half Height",
+                        "operation": "DIVIDE",
+                        "input_defaults": {1: 2},
+                    },
+                ],
+                [
+                    {
+                        "type_id": "GeometryNodeMeshCone",
+                        "label": "Cone",
+                    },
+                    {
+                        "type_id": "GeometryNodeSetPosition",
+                        "label": "Cone Position",
+                    },
+                    {
+                        "type_id": "ShaderNodeCombineXYZ",
+                        "label": "Cone Z Offset",
+                    },
+                    {
+                        "type_id": "ShaderNodeMath",
+                        "label": "Arrow Height",
+                        "operation": "DIVIDE",
+                        "input_defaults": {1: 3},
+                    },
+                ],
+                [
+                    {
+                        "type_id": "GeometryNodeJoinGeometry",
+                        "label": "Join Geometry",
+                    },
+                ],
+                [
+                    {
+                        "type_id": "GeometryNodeTransform",
+                        "label": "Transform Geometry",
+                    },
+                ],
+                [
+                    {
+                        "type_id": "NodeGroupOutput",
+                        "label": "Group Output",
+                        "is_active_output": True,
+                    }
+                ],
+            ],
+            socket_kwargs=[
+                {
+                    "name": "Length",
+                    "in_out": "INPUT",
+                    "type": "NodeSocketFloat",
+                },
+                {
+                    "name": "Radius",
+                    "in_out": "INPUT",
+                    "type": "NodeSocketFloat",
+                },
+                {
+                    "name": "Arrowsize",
+                    "in_out": "INPUT",
+                    "type": "NodeSocketFloat",
+                },
+                {
+                    "name": "Rotation",
+                    "in_out": "INPUT",
+                    "type": "NodeSocketRotation",
+                },
+                {
+                    "name": "Resolution",
+                    "in_out": "INPUT",
+                    "type": "NodeSocketInt",
+                },
+                {
+                    "name": "Geometry",
+                    "in_out": "OUTPUT",
+                    "type": "NodeSocketGeometry",
+                },
+            ],
+            node_links=[
+                (("GroupInput", "Length"), ("Cylinder", "Depth")),
+                (("GroupInput", "Length"), ("ConeZOffset", "Z")),
+                (("GroupInput", "Length"), ("HalfHeight", 0)),
+                (("GroupInput", "Radius"), ("Cylinder", "Radius")),
+                (("GroupInput", "Arrowsize"), ("Cone", "Depth")),
+                (("GroupInput", "Arrowsize"), ("ArrowHeight", 0)),
+                (("GroupInput", "Rotation"), ("TransformGeometry", "Rotation")),
+                (("GroupInput", "Resolution"), ("Cylinder", "Vertices")),
+                (("GroupInput", "Resolution"), ("Cone", "Vertices")),
+                (("Cylinder", "Mesh"), ("CylinderPosition", "Geometry")),
+                (("CylinderPosition", "Geometry"), ("JoinGeometry", 0)),
+                (("CylinderZOffset", "Vector"), ("CylinderPosition", "Offset")),
+                (("HalfHeight", "Value"), ("CylinderZOffset", "Z")),
+                (("Cone", "Mesh"), ("ConePosition", "Geometry")),
+                (("ConePosition", "Geometry"), ("JoinGeometry", 0)),
+                (("ConeZOffset", "Vector"), ("ConePosition", "Offset")),
+                (("ArrowHeight", "Value"), ("Cone", "Radius Bottom")),
+                (("JoinGeometry", 0), ("TransformGeometry", "Geometry")),
+                (("TransformGeometry", "Geometry"), ("GroupOutput", "Geometry")),
+            ],
+            node_tree=axis,
+            clear=True,
+        )
+        return axis
+
+    axis = generate_axis_arrow()
+
+    axes = bpy.data.node_groups.new(type="GeometryNodeTree", name="OriginAxes")
+    all_nodes = CreateNodes(
+        node_kwargs=[
+            [
+                {
+                    "type_id": "NodeGroupInput",
+                    "label": "Group Input",
+                },
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeGroup",
+                    "label": f"{XYZ} Axis",
+                    "node_tree": axis,
+                }
+                for XYZ in "XYZ"
+            ]
+            + [
+                {"type_id": "GeometryNodeMeshUVSphere", "label": "Origin"},
+                {
+                    "type_id": "FunctionNodeIntegerMath",
+                    "label": "Half Resolution",
+                    "operation": "DIVIDE",
+                    "input_defaults": {1: 2},
+                },
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeStoreNamedAttribute",
+                    "label": f"Store {XYZ} Color",
+                    "data_type": "FLOAT_COLOR",
+                    "domain": "FACE",
+                    "input_defaults": {2: "shading"},
+                }
+                for XYZ in ["X", "Y", "Z", "Origin"]
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeJoinGeometry",
+                    "label": "Join Geometry",
+                },
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeSetShadeSmooth",
+                    "label": "Smooth Shade",
+                },
+            ],
+            [
+                {
+                    "type_id": "GeometryNodeSetMaterial",
+                    "label": "Set Material",
+                    "input_defaults": {"Material": mat},
+                },
+            ],
+            [
+                {
+                    "type_id": "NodeGroupOutput",
+                    "label": "Group Output",
+                    "is_active_output": True,
+                }
+            ],
+        ],
+        socket_kwargs=[
+            {
+                "name": "Lengths",
+                "in_out": "INPUT",
+                "type": "NodeSocketFloat",
+                "default_value": 2.0,
+            },
+            {
+                "name": "Thicknesses",
+                "in_out": "INPUT",
+                "type": "NodeSocketFloat",
+                "default_value": 0.1,
+            },
+            {
+                "name": "Arrowsizes",
+                "in_out": "INPUT",
+                "type": "NodeSocketFloat",
+                "default_value": 0.75,
+            },
+            {
+                "name": "Origin Radius",
+                "in_out": "INPUT",
+                "type": "NodeSocketFloat",
+                "default_value": 0.25,
+            },
+            {
+                "name": "X Color",
+                "in_out": "INPUT",
+                "type": "NodeSocketColor",
+                "default_value": (
+                    0.9647058823529412,
+                    0.21176470588235294,
+                    0.3215686274509804,
+                    1.0,
+                ),
+            },
+            {
+                "name": "Y Color",
+                "in_out": "INPUT",
+                "type": "NodeSocketColor",
+                "default_value": (
+                    0.49411764705882355,
+                    0.7607843137254902,
+                    0.07058823529411765,
+                    1.0,
+                ),
+            },
+            {
+                "name": "Z Color",
+                "in_out": "INPUT",
+                "type": "NodeSocketColor",
+                "default_value": (
+                    0.1843137254901961,
+                    0.5176470588235295,
+                    0.8941176470588236,
+                    1.0,
+                ),
+            },
+            {
+                "name": "Origin Color",
+                "in_out": "INPUT",
+                "type": "NodeSocketColor",
+                "default_value": (
+                    0.19607843137254902,
+                    0.19607843137254902,
+                    0.19607843137254902,
+                    1.0,
+                ),
+            },
+            {
+                "name": "Resolution",
+                "in_out": "INPUT",
+                "type": "NodeSocketInt",
+                "default_value": 32,
+            },
+            {
+                "name": "Geometry",
+                "in_out": "OUTPUT",
+                "type": "NodeSocketGeometry",
+            },
+        ],
+        node_links=[
+            (("GroupInput", q_left), (f"{XYZ}Axis", q_right))
+            for XYZ in "XYZ"
+            for q_left, q_right in zip(
+                ["Lengths", "Thicknesses", "Arrowsizes", "Resolution"],
+                ["Length", "Radius", "Arrowsize", "Resolution"],
+            )
+        ]
+        + [
+            (("GroupInput", f"{attr} Color"), (f"Store{attr}Color", "Value"))
+            for attr in ["X", "Y", "Z", "Origin"]
+        ]
+        + [
+            (("GroupInput", "Origin Radius"), ("Origin", "Radius")),
+            (("GroupInput", "Resolution"), ("Origin", "Segments")),
+            (("GroupInput", "Resolution"), ("HalfResolution", 0)),
+            (("HalfResolution", 0), ("Origin", "Rings")),
+        ]
+        + [
+            ((f"{XYZ}Axis", "Geometry"), (f"Store{XYZ}Color", "Geometry"))
+            for XYZ in "XYZ"
+        ]
+        + [((f"Store{XYZ}Color", "Geometry"), ("JoinGeometry", 0)) for XYZ in "XYZ"]
+        + [
+            (("Origin", "Mesh"), ("StoreOriginColor", "Geometry")),
+            (("StoreOriginColor", "Geometry"), ("JoinGeometry", 0)),
+            (("JoinGeometry", 0), ("SmoothShade", "Geometry")),
+            (("SmoothShade", "Geometry"), ("SetMaterial", "Geometry")),
+            (("SetMaterial", "Geometry"), ("GroupOutput", "Geometry")),
+        ],  # pyright: ignore[reportArgumentType]
+        node_tree=axes,
+        clear=True,
+    )
+    all_nodes["XAxis"].inputs["Rotation"].default_value = (0, 1.5708, 0)
+    all_nodes["YAxis"].inputs["Rotation"].default_value = (1.5708, 0, 3.1416)
+
+    return axes
