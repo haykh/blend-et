@@ -69,7 +69,7 @@ class Fieldlines_Props(bpy.types.PropertyGroup):
     )
     seed_displacement: bpy.props.FloatProperty(
         name="Seed plane displacement",
-        description="Displacement of the seed plane along the axis normal",
+        description="Displacement of the seed plane along the axis normal in cells",
         default=0.0,
         precision=3,
     )
@@ -77,6 +77,36 @@ class Fieldlines_Props(bpy.types.PropertyGroup):
         name="Custom seed label",
         description="Label for the custom seed points in the .npz file",
         default="seed_points",
+    )
+    crop_xmin: bpy.props.IntProperty(
+        name="X min",
+        description="Crop arrays: minimum X index (inclusive)",
+        default=0,
+    )
+    crop_xmax: bpy.props.IntProperty(
+        name="X max",
+        description="Crop arrays: maximum X index (exclusive)",
+        default=-1,
+    )
+    crop_ymin: bpy.props.IntProperty(
+        name="Y min",
+        description="Crop arrays: minimum Y index (inclusive)",
+        default=0,
+    )
+    crop_ymax: bpy.props.IntProperty(
+        name="Y max",
+        description="Crop arrays: maximum Y index (exclusive)",
+        default=-1,
+    )
+    crop_zmin: bpy.props.IntProperty(
+        name="Z min",
+        description="Crop arrays: minimum Z index (inclusive)",
+        default=0,
+    )
+    crop_zmax: bpy.props.IntProperty(
+        name="Z max",
+        description="Crop arrays: maximum Z index (exclusive)",
+        default=-1,
     )
 
 

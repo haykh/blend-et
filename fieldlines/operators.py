@@ -45,11 +45,36 @@ class Fieldlines_Create(bpy.types.Operator):
                     fz_str = k
 
             if fx_str is None or fy_str is None or fz_str is None:
-                self.report({"ERROR"}, "Could not identify x, y, z keys in the .npz file")
+                self.report(
+                    {"ERROR"}, "Could not identify x, y, z keys in the .npz file"
+                )
                 return {"CANCELLED"}
             fx_data = npz_data[fx_str]
             fy_data = npz_data[fy_str]
             fz_data = npz_data[fz_str]
+            
+            # crop
+            zmin = props.crop_zmin
+            zmax = props.crop_zmax
+            ymin = props.crop_ymin
+            ymax = props.crop_ymax
+            xmin = props.crop_xmin
+            xmax = props.crop_xmax
+            self.report(
+                {"INFO"},
+                f"Cropping to Z[{zmin}:{zmax}] Y[{ymin}:{ymax}] X[{xmin}:{xmax}]",
+            )
+            try:
+                fx_data = fx_data[zmin:zmax, ymin:ymax, xmin:xmax]
+                fy_data = fy_data[zmin:zmax, ymin:ymax, xmin:xmax]
+                fz_data = fz_data[zmin:zmax, ymin:ymax, xmin:xmax]
+            except Exception as e:
+                self.report({"ERROR"}, f"Invalid crop indices: {e}")
+                return {"CANCELLED"}
+            if fx_data.size == 0 or fy_data.size == 0 or fz_data.size == 0:
+                self.report({"ERROR"}, "Cropped array is empty.")
+                return {"CANCELLED"}
+
             sz, sy, sx = fx_data.shape
             if fy_data.shape != (sz, sy, sx) or fz_data.shape != (sz, sy, sx):
                 self.report({"ERROR"}, "x, y, z data have different shapes")
@@ -79,7 +104,9 @@ class Fieldlines_Create(bpy.types.Operator):
                 self.report({"ERROR"}, "Invalid seed points option")
                 return {"CANCELLED"}
 
-            seed_points = np.vstack([seed_xs.ravel(), seed_ys.ravel(), seed_zs.ravel()]).T
+            seed_points = np.vstack(
+                [seed_xs.ravel(), seed_ys.ravel(), seed_zs.ravel()]
+            ).T
 
             nfieldlines = seed_points.shape[0]
 

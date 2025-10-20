@@ -67,16 +67,32 @@ class Fieldlines_Panel_3DV(bpy.types.Panel):
 
         layout.prop(props, "field_prefix")
 
+        layout.separator()
+        box_crop = layout.box()
+        box_crop.label(text="Crop indices")
+        row = box_crop.row()
+        split = row.split()
+        split.column().prop(props, "crop_xmin")
+        split.column().prop(props, "crop_xmax")
+        row = box_crop.row()
+        split = row.split()
+        split.column().prop(props, "crop_ymin")
+        split.column().prop(props, "crop_ymax")
+        row = box_crop.row()
+        split = row.split()
+        split.column().prop(props, "crop_zmin")
+        split.column().prop(props, "crop_zmax")
+
         box = layout.box()
         box.label(text="Integration settings", icon="MOD_CURVE")
         box.row().prop(props, "integration_direction")
         box.row().prop(props, "integration_step")
         box.row().prop(props, "integration_maxiter")
 
-        layout.prop(props, "seed_points")
-
+        
         box = layout.box()
         box.label(text="Seed points settings", icon="PARTICLES")
+        box.row().prop(props, "seed_points")
         if props.seed_points == "Custom":
             box.row().prop(props, "custom_seed_label")
         elif props.seed_points in ["XY", "XZ", "YZ"]:
