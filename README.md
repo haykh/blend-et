@@ -26,7 +26,9 @@ This panel provides quick access to commonly used settings:
 2. `Fix Colors`: disables the default filmic color-correction for better accuracy;
 3. `Set Background Color`: changes the background color to a defined value.
 
-![](docs/tools-panel.png)
+| ![](docs/tools-panel.png) |
+|:---:|
+| Tools panel |
 
 ### Annotations
 
@@ -36,7 +38,9 @@ Constructs customizable mesh objects for annotating the plots:
 2. `Add arrow`: adds a customizable arrow (flat or cylindrical) which can be positioned as needed;
 3. `Add axes`: adds 3D Cartesian axes indicator.
 
-![](docs/annotations-panel.png)
+| ![](docs/annotations-panel.png) | ![](docs/annotation-grid-demo.png) | ![](docs/annotation-arrows-demo.png) | ![](docs/annotation-axes-demo.png) |
+|:---:|:---:|:---:|:---:|
+| Annotations panel | Grid box | Arrows | Orientation axes |
 
 ### Volume Rendering
 
@@ -48,7 +52,9 @@ This panel contains all the tools for importing the 3D data for volume rendering
    2. `Axis order`: order of x-y-z axes in the dataset;
    3. `Crop indices`: if you only need to import a subset, you may want to crop your dataset here (negative indices are taken from the end).
 
-![](docs/volume-rendering-panel.png)
+| ![](docs/volume-rendering-panel.png) | ![](docs/volume-rendering-demo.png) |
+|:---:|:---:|
+| Volume rendering panel | Customizable volume rendering material |
 
 ### Fieldlines
 
@@ -65,7 +71,9 @@ This panel allows to import and plot streamlines from a 3D vector field:
    1. `Seed resolution`: the number of seed points in each direction on the seed plane;
    2. `Seed plane displacement`: is the displacement of the seed plane in cells in the third direction (i.e., if the seed plane is in `XY`, the displacement will be in `Z`).
 
-![](docs/fieldlines-panel.png)
+| ![](docs/fieldlines-panel.png) | ![](docs/fieldlines-demo.jpg) | ![](docs/fieldlines-material-demo.png) |
+|:---:|:---:|:---:|
+| Fieldline panel | Customizable fieldlines | Material for fieldlines |
 
 ### LaTeX
 
@@ -76,4 +84,6 @@ You can use this panel to add $\LaTeX$-compiled text to the scene (e.g., labels,
 3. `Transform Settings`: you may either supply custom transform settings here, or alternatively you can also modify the mesh afterwards;
 4. `Use Custom Preamble`: you can also supply a custom preamble to use a non-default package (see example [here](https://github.com/ghseeli/latex2blender/blob/master/custom_preamble_example.tex)).
 
-![](docs/latex-panel.png)
+| ![](docs/latex-panel.png) | ![](docs/latex-demo.png) |
+|:---:|:---:|
+| $\LaTeX$ panel | $\LaTeX$ demo |
