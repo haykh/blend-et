@@ -133,71 +133,6 @@ class Volume_ImportNumpy(bpy.types.Operator):
             self.report({"ERROR"}, "Pick a valid .npy /.npz file first.")
             return {"CANCELLED"}
 
-        directory = os.path.dirname(path)
-        ext = os.path.splitext(path)[1].lower()
-        try:
-            if ext == ".npy":
-                arr = np.load(path, allow_pickle=False)
-            elif ext == ".npz":
-                z = np.load(path, allow_pickle=False)
-                key = props.npz_key.strip()
-                if not key:
-                    self.report(
-                        {"ERROR"}, f"NPZ datasets: {list(z.files)} — set 'NPZ field'."
-                    )
-                    return {"CANCELLED"}
-                if key not in z.files:
-                    self.report(
-                        {"ERROR"}, f"'{key}' not in NPZ datasets: {list(z.files)}"
-                    )
-                    return {"CANCELLED"}
-                arr = z[key]
-            else:
-                self.report({"ERROR"}, "File must be .npy or .npz")
-                return {"CANCELLED"}
-        except Exception as e:
-            self.report({"ERROR"}, f"Failed to load array: {e}")
-            return {"CANCELLED"}
-
-        if arr.ndim == 2:
-            arr = arr[None, ...]  # treat as single slice: Z=1
-        if arr.ndim != 3:
-            self.report({"ERROR"}, f"Array must be 3D (got shape {arr.shape})")
-            return {"CANCELLED"}
-
-        # crop
-        zmin = props.numpy_crop_zmin
-        zmax = props.numpy_crop_zmax
-        ymin = props.numpy_crop_ymin
-        ymax = props.numpy_crop_ymax
-        xmin = props.numpy_crop_xmin
-        xmax = props.numpy_crop_xmax
-        self.report(
-            {"INFO"}, f"Cropping to Z[{zmin}:{zmax}] Y[{ymin}:{ymax}] X[{xmin}:{xmax}]"
-        )
-        try:
-            arr = arr[xmin:xmax, ymin:ymax, zmin:zmax]
-        except Exception as e:
-            self.report({"ERROR"}, f"Invalid crop indices: {e}")
-            return {"CANCELLED"}
-        if arr.size == 0:
-            self.report({"ERROR"}, "Cropped array is empty.")
-            return {"CANCELLED"}
-
-        order_map = {
-            "ZYX": (0, 1, 2),
-            "XYZ": (2, 1, 0),
-            "YZX": (1, 2, 0),
-            "ZXY": (0, 2, 1),
-            "XZY": (2, 0, 1),
-            "YXZ": (1, 0, 2),
-        }
-        axes = order_map.get(props.numpy_axis_order, (0, 1, 2))
-        arr = np.transpose(arr, axes).astype(np.float64, copy=False).T
-        arr = np.nan_to_num(arr, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
-
-        _hist, _q05, _q95, _vmin, _vmax = _compute_histogram_np(arr, bins=128)
-
         try:
             try:
                 import pyopenvdb as vdb  # type: ignore
@@ -211,10 +146,80 @@ class Volume_ImportNumpy(bpy.types.Operator):
             )
             return {"CANCELLED"}
 
-        arr = np.ascontiguousarray(arr)
         grid = vdb.FloatGrid()
         grid.name = "density"
-        grid.copyFromArray(arr)
+
+        directory = os.path.dirname(path)
+        ext = os.path.splitext(path)[1].lower()
+
+        with np.load(path, allow_pickle=False) as data:
+            try:
+                if ext == ".npy":
+                    arr = data
+                elif ext == ".npz":
+                    z = data
+                    key = props.npz_key.strip()
+                    if not key:
+                        self.report(
+                            {"ERROR"},
+                            f"NPZ datasets: {list(z.files)} — set 'NPZ field'.",
+                        )
+                        return {"CANCELLED"}
+                    if key not in z.files:
+                        self.report(
+                            {"ERROR"}, f"'{key}' not in NPZ datasets: {list(z.files)}"
+                        )
+                        return {"CANCELLED"}
+                    arr = z[key]
+                else:
+                    self.report({"ERROR"}, "File must be .npy or .npz")
+                    return {"CANCELLED"}
+            except Exception as e:
+                self.report({"ERROR"}, f"Failed to load array: {e}")
+                return {"CANCELLED"}
+
+            if arr.ndim == 2:
+                arr = arr[None, ...]  # treat as single slice: Z=1
+            if arr.ndim != 3:
+                self.report({"ERROR"}, f"Array must be 3D (got shape {arr.shape})")
+                return {"CANCELLED"}
+
+            # crop
+            zmin = props.numpy_crop_zmin
+            zmax = props.numpy_crop_zmax
+            ymin = props.numpy_crop_ymin
+            ymax = props.numpy_crop_ymax
+            xmin = props.numpy_crop_xmin
+            xmax = props.numpy_crop_xmax
+            self.report(
+                {"INFO"},
+                f"Cropping to Z[{zmin}:{zmax}] Y[{ymin}:{ymax}] X[{xmin}:{xmax}]",
+            )
+            try:
+                arr = arr[xmin:xmax, ymin:ymax, zmin:zmax]
+            except Exception as e:
+                self.report({"ERROR"}, f"Invalid crop indices: {e}")
+                return {"CANCELLED"}
+            if arr.size == 0:
+                self.report({"ERROR"}, "Cropped array is empty.")
+                return {"CANCELLED"}
+
+            order_map = {
+                "ZYX": (0, 1, 2),
+                "XYZ": (2, 1, 0),
+                "YZX": (1, 2, 0),
+                "ZXY": (0, 2, 1),
+                "XZY": (2, 0, 1),
+                "YXZ": (1, 0, 2),
+            }
+            axes = order_map.get(props.numpy_axis_order, (0, 1, 2))
+            arr = np.transpose(arr, axes).astype(np.float64, copy=False).T
+            arr = np.nan_to_num(arr, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
+
+            _hist, _q05, _q95, _vmin, _vmax = _compute_histogram_np(arr, bins=128)
+
+            arr = np.ascontiguousarray(arr)
+            grid.copyFromArray(arr)
 
         # Output file under same directory in 'BlendET_cache'
         uuid_str = f"{props.uuid:04d}"
