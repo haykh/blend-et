@@ -1,6 +1,8 @@
 # Blend-ET
 
-Blend-ET is a plugin for the [Blender](https://www.blender.org/) 3D graphics software which introduces useful tools to streamline scientific data visualization.
+Blend-ET is a plugin for the [Blender](https://www.blender.org/) 3D graphics software which introduces useful tools to streamline scientific data visualization. 
+
+> Note: the plugin has been tested primarily on Blender 4.4 and 4.5, if you have issues on newer versions -- please open an issue.
 
 ## Installation
 
@@ -27,8 +29,8 @@ This panel provides quick access to commonly used settings:
 3. `Set Background Color`: changes the background color to a defined value.
 
 | ![](docs/tools-panel.png) |
-|:---:|
-| Tools panel |
+| :-----------------------: |
+|        Tools panel        |
 
 ### Annotations
 
@@ -39,8 +41,8 @@ Constructs customizable mesh objects for annotating the plots:
 3. `Add axes`: adds 3D Cartesian axes indicator.
 
 | ![](docs/annotations-panel.png) | ![](docs/annotation-grid-demo.png) | ![](docs/annotation-arrows-demo.png) | ![](docs/annotation-axes-demo.png) |
-|:---:|:---:|:---:|:---:|
-| Annotations panel | Grid box | Arrows | Orientation axes |
+| :-----------------------------: | :--------------------------------: | :----------------------------------: | :--------------------------------: |
+|        Annotations panel        |              Grid box              |                Arrows                |          Orientation axes          |
 
 ### Volume Rendering
 
@@ -52,9 +54,9 @@ This panel contains all the tools for importing the 3D data for volume rendering
    2. `Axis order`: order of x-y-z axes in the dataset;
    3. `Crop indices`: if you only need to import a subset, you may want to crop your dataset here (negative indices are taken from the end).
 
-| ![](docs/volume-rendering-panel.png) | ![](docs/volume-rendering-demo.png) |
-|:---:|:---:|
-| Volume rendering panel | Customizable volume rendering material |
+| ![](docs/volume-rendering-panel.png) |  ![](docs/volume-rendering-demo.png)   |
+| :----------------------------------: | :------------------------------------: |
+|        Volume rendering panel        | Customizable volume rendering material |
 
 ### Fieldlines
 
@@ -72,8 +74,8 @@ This panel allows to import and plot streamlines from a 3D vector field:
    2. `Seed plane displacement`: is the displacement of the seed plane in cells in the third direction (i.e., if the seed plane is in `XY`, the displacement will be in `Z`).
 
 | ![](docs/fieldlines-panel.png) | ![](docs/fieldlines-demo.jpg) | ![](docs/fieldlines-material-demo.png) |
-|:---:|:---:|:---:|
-| Fieldline panel | Customizable fieldlines | Material for fieldlines |
+| :----------------------------: | :---------------------------: | :------------------------------------: |
+|        Fieldline panel         |    Customizable fieldlines    |        Material for fieldlines         |
 
 ### LaTeX
 
@@ -85,5 +87,21 @@ You can use this panel to add $\LaTeX$-compiled text to the scene (e.g., labels,
 4. `Use Custom Preamble`: you can also supply a custom preamble to use a non-default package (see example [here](https://github.com/ghseeli/latex2blender/blob/master/custom_preamble_example.tex)).
 
 | ![](docs/latex-panel.png) | ![](docs/latex-demo.png) |
-|:---:|:---:|
-| $\LaTeX$ panel | $\LaTeX$ demo |
+| :-----------------------: | :----------------------: |
+|      $\LaTeX$ panel       |      $\LaTeX$ demo       |
+
+
+## To-Do
+
+- [x] vdb import
+- [x] numpy import
+- [x] create volume material + colormap
+- [x] crop volume
+- [x] histogram of volume data
+- [x] add latex text labels
+- [x] add box & ticks
+- [x] import xyz fields to build fieldlines + seed points
+- [x] add arrows
+- [x] orientation axes
+- [ ] custom seed points for fieldlines
+- [ ] support for animations

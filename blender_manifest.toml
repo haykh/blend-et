@@ -1,0 +1,18 @@
+schema_version = "1.0.0"
+
+id = "blend_et"
+version = "1.0.0"
+name = "BlendET"
+tagline = "Blender Plugin which adds a collection of tools for scientific visualization"
+maintainer = "Hayk Hakobyan <haykh.astro@gmail.com>"
+type = "add-on"
+
+website = "https://github.com/haykh/blend-et/"
+
+tags = ["Add Mesh", "Geometry Nodes", "Import-Export", "Material", "Mesh", "Node", "User Interface"]
+
+blender_version_min = "4.4.0"
+
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
