@@ -12,7 +12,7 @@ Follow the instructions on the video below.
 4. Pick the downloaded `.zip` file and hit `Install from Disk`;
 5. In the same `Add-ons` panel, find `BlendET` and enable it by ticking the checkbox.
 
-![](docs/blendet-howto.webp)
+![](docs/blendet-howto.webm)
 
 ## Features
 
