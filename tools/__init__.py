@@ -3,7 +3,12 @@ import bpy
 
 def classes():
     from .props import Tools_Props
-    from .operators import Tools_SwitchToCycles, Tools_FixColors, Tools_SetBackground
+    from .operators import (
+        Tools_SwitchToCycles,
+        Tools_FixColors,
+        Tools_SetBackground,
+        Tools_ClearUnusedData,
+    )
     from .ui import Tools_Panel_3DV
 
     return (
@@ -11,6 +16,7 @@ def classes():
         Tools_SwitchToCycles,
         Tools_FixColors,
         Tools_SetBackground,
+        Tools_ClearUnusedData,
         Tools_Panel_3DV,
     )
 

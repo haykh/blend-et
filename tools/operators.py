@@ -72,3 +72,14 @@ class Tools_SetBackground(bpy.types.Operator):
         if bg_node is not None:
             bg_node.inputs[0].default_value = (color[0], color[1], color[2], 1.0)
         return {"FINISHED"}
+
+
+class Tools_ClearUnusedData(bpy.types.Operator):
+    bl_idname = "blend_et.clear_unused_data"
+    bl_label = "Clear Unused Data"
+    bl_description = "Remove all unused data blocks from the blend file"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context: bpy.types.Context):
+        bpy.ops.outliner.orphans_purge(do_recursive=True)
+        return {"FINISHED"}

@@ -26,7 +26,8 @@ This panel provides quick access to commonly used settings:
 
 1. `Switch to Cycles`: sets the active rendering backend to `Cycles` (needed for volume rendering);
 2. `Fix Colors`: disables the default filmic color-correction for better accuracy;
-3. `Set Background Color`: changes the background color to a defined value.
+3. `Set Background Color`: changes the background color to a defined value;
+4. `Clear Unused Data`: garbage-collect all the data which is not currently linked to any scene.
 
 | ![](docs/tools-panel.png) |
 | :-----------------------: |
