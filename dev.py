@@ -2,11 +2,11 @@ import bpy
 import sys
 import importlib
 
-from . import colormaps, tools, annotations, volume, fieldlines, latex
+from . import colormaps, tools, annotations, volume, fieldlines, pointcloud, latex
 
 ADDON_PKG = str(__package__).split(".")[0]
 
-SUBMODULES = (colormaps, tools, annotations, volume, fieldlines, latex)
+SUBMODULES = (colormaps, tools, annotations, volume, fieldlines, pointcloud, latex)
 
 
 def RegisterAll(include_dev=True):
@@ -54,11 +54,20 @@ def _reload_addon_packages():
         annotations as _annotations,
         volume as _volume,
         fieldlines as _fieldlines,
+        pointcloud as _pointcloud,
         latex as _latex,
     )
 
     global SUBMODULES
-    SUBMODULES = (_colormaps, _tools, _annotations, _volume, _fieldlines, _latex)
+    SUBMODULES = (
+        _colormaps,
+        _tools,
+        _annotations,
+        _volume,
+        _fieldlines,
+        _pointcloud,
+        _latex,
+    )
 
 
 class Dev_Panel_3DV(bpy.types.Panel):
