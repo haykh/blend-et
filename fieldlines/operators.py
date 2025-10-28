@@ -1,10 +1,15 @@
 import bpy
 
 from .utils import (
-    Create_raw_data_fieldline,
+    # Create_raw_data_fieldline,
     Create_or_reset_fieldline_material,
     Create_fieldline_geometry,
     On_material_colormap_change,
+)
+
+from ..utilities.data import Encode_raw_data  # pyright: ignore[reportMissingImports]
+from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+    CommonMaterialReverseColormap,
 )
 
 
@@ -52,7 +57,7 @@ class Fieldlines_Create(bpy.types.Operator):
             fx_data = npz_data[fx_str]
             fy_data = npz_data[fy_str]
             fz_data = npz_data[fz_str]
-            
+
             # crop
             zmin = props.crop_zmin
             zmax = props.crop_zmax
@@ -165,7 +170,7 @@ class Fieldlines_Create(bpy.types.Operator):
                         zline = np.append(zline, zl)
                         magline = np.append(magline, magl)
 
-                Create_raw_data_fieldline(
+                Encode_raw_data(
                     {
                         "x": xline,
                         "y": yline,
@@ -175,7 +180,8 @@ class Fieldlines_Create(bpy.types.Operator):
                     },
                     context,
                     raw_collection,
-                    i,
+                    "Fieldline",
+                    f"{i}",
                 )
 
         mesh = Create_fieldline_geometry(context, raw_collection, material, uuid_str)
@@ -192,16 +198,17 @@ class FieldlineMaterial_ReverseColormap(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context):
-        mat = getattr(context.object, "active_material", None)
-        if mat is None:
-            self.report({"ERROR"}, "No active material on the selected object.")
+        try:
+            CommonMaterialReverseColormap(
+                category="fieldline",
+                on_colormap_change_callback=On_material_colormap_change,
+                ctx=context,
+            )
+            self.report({"INFO"}, f"Colormap reversed")
+            return {"FINISHED"}
+        except Exception as e:
+            self.report({"ERROR"}, f"Failed to reverse colormap: {e}")
             return {"CANCELLED"}
-        mat.fieldline_colormap_reversed = not bool(
-            getattr(mat, "fieldline_colormap_reversed", False)
-        )
-        On_material_colormap_change(mat, context)
-        self.report({"INFO"}, f"Colormap reversed: {mat.fieldline_colormap_reversed}")
-        return {"FINISHED"}
 
 
 class FieldlineMaterial_CreateOrReset(bpy.types.Operator):

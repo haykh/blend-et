@@ -11,6 +11,9 @@ from .utils import (
     Clear_histogram_on_material,
     On_material_colormap_change,
 )
+from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+    CommonMaterialReverseColormap,
+)
 
 
 class VolumeMaterial_ReverseColormap(bpy.types.Operator):
@@ -20,16 +23,17 @@ class VolumeMaterial_ReverseColormap(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context: bpy.types.Context):
-        mat = getattr(context.object, "active_material", None)
-        if mat is None:
-            self.report({"ERROR"}, "No active material on the selected object.")
+        try:
+            CommonMaterialReverseColormap(
+                category="volume",
+                on_colormap_change_callback=On_material_colormap_change,
+                ctx=context,
+            )
+            self.report({"INFO"}, f"Colormap reversed")
+            return {"FINISHED"}
+        except Exception as e:
+            self.report({"ERROR"}, f"Failed to reverse colormap: {e}")
             return {"CANCELLED"}
-        mat.volume_colormap_reversed = not bool(
-            getattr(mat, "volume_colormap_reversed", False)
-        )
-        On_material_colormap_change(mat, context)
-        self.report({"INFO"}, f"Colormap reversed: {mat.volume_colormap_reversed}")
-        return {"FINISHED"}
 
 
 class VolumeMaterial_CreateOrReset(bpy.types.Operator):

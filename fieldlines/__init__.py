@@ -21,8 +21,7 @@ def classes():
 
 
 def register():
-    from .props import Fieldlines_Props
-    from .props import FieldlineMaterial_Props
+    from .props import Fieldlines_Props, FieldlineMaterial_Props
 
     for cls in classes():
         bpy.utils.register_class(cls)

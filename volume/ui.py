@@ -1,6 +1,11 @@
 import bpy
 
 
+from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+    CommonMaterialUI,
+)
+
+
 class VolumeMaterial_Panel_NDE(bpy.types.Panel):
     bl_label = "Volume material"
     bl_space_type = "NODE_EDITOR"
@@ -27,23 +32,8 @@ class VolumeMaterial_Panel_NDE(bpy.types.Panel):
 
         layout.use_property_split = True
         layout.use_property_decorate = False
-
-        layout.row().operator(
-            "blend_et.materials_create_or_reset_volume_material",
-            icon="NODETREE",
-            text="Create/reset volume material",
-        )
-        layout.separator()
-
-        box = layout.box()
-        box.row().label(text="Colormap", icon="COLOR")
-        box.row().template_icon_view(mat, "volume_colormap", show_labels=True, scale=5)
-
-        box.row().operator(
-            "blend_et.materials_reverse_volume_colormap",
-            icon="ARROW_LEFTRIGHT",
-            text="Reverse colormap",
-        )
+        
+        CommonMaterialUI(category="volume", layout=layout, mat=mat)
 
         if getattr(mat, "volume_hist_ready", False) and mat.volume_hist_image:
             layout.separator()

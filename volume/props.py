@@ -8,6 +8,10 @@ from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
     Enum_colormap_items,
 )
 
+from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+    CommonMaterial_Props,
+)
+
 
 class Volume_Props(bpy.types.PropertyGroup):
     uuid: bpy.props.IntProperty(
@@ -84,10 +88,10 @@ class Volume_Props(bpy.types.PropertyGroup):
 class VolumeMaterial_Props:
     @staticmethod
     def register():
-        if hasattr(bpy.types.Material, "volume_colormap"):
-            del bpy.types.Material.volume_colormap
-        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
-            del bpy.types.Material.volume_colormap_reversed
+        CommonMaterial_Props.register(
+            category="volume",
+            on_material_change=On_material_colormap_change,
+        )
         if hasattr(bpy.types.Material, "volume_hist_vmin"):
             del bpy.types.Material.volume_hist_vmin
         if hasattr(bpy.types.Material, "volume_hist_vmax"):
@@ -100,19 +104,6 @@ class VolumeMaterial_Props:
             del bpy.types.Material.volume_hist_image
         if hasattr(bpy.types.Material, "volume_hist_ready"):
             del bpy.types.Material.volume_hist_ready
-        bpy.types.Material.volume_colormap = bpy.props.EnumProperty(
-            name="Colormap",
-            description="Colormap for the volume material",
-            items=Enum_colormap_items,
-            default=0,
-            update=On_material_colormap_change,
-        )
-        bpy.types.Material.volume_colormap_reversed = bpy.props.BoolProperty(
-            name="Reverse colormap",
-            description="Reverse the selected colormap (like Matplotlib _r)",
-            default=False,
-            update=On_material_colormap_change,
-        )
         bpy.types.Material.volume_hist_vmin = bpy.props.FloatProperty(
             name="Min value",
             description="Smallest value of imported NumPy data",
@@ -162,7 +153,4 @@ class VolumeMaterial_Props:
             del bpy.types.Material.volume_hist_vmax
         if hasattr(bpy.types.Material, "volume_hist_vmin"):
             del bpy.types.Material.volume_hist_vmin
-        if hasattr(bpy.types.Material, "volume_colormap_reversed"):
-            del bpy.types.Material.volume_colormap_reversed
-        if hasattr(bpy.types.Material, "volume_colormap"):
-            del bpy.types.Material.volume_colormap
+        CommonMaterial_Props.unregister(category="volume")
