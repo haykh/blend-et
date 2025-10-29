@@ -28,6 +28,8 @@ def Create_or_reset_volume_material(name) -> bpy.types.Material:
 
     if (nt := mat.node_tree) is None:
         raise RuntimeError("Failed to access node tree of material")
+    
+    mat["category"] = "volume"
 
     all_nodes = CreateNodes(
         node_kwargs=[

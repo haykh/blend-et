@@ -20,6 +20,7 @@ class FieldlineMaterial_Panel_NDE(bpy.types.Panel):
             and getattr(space, "tree_type", "") == "ShaderNodeTree"
             and obj is not None
             and obj.active_material is not None
+            and obj.active_material.get("category", None) == "fieldline"
         )
 
     def draw(self, context: bpy.types.Context):

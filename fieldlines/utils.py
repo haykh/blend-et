@@ -248,6 +248,8 @@ def Create_or_reset_fieldline_material(name: str):
     if mat.node_tree is None:
         raise RuntimeError("Failed to access node tree of material")
 
+    mat["category"] = "fieldline"
+
     nodes = CreateNodes(
         node_kwargs=[
             [

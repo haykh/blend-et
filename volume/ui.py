@@ -21,6 +21,7 @@ class VolumeMaterial_Panel_NDE(bpy.types.Panel):
             and getattr(space, "tree_type", "") == "ShaderNodeTree"
             and obj is not None
             and obj.active_material is not None
+            and obj.active_material.get("category", None) == "volume"
         )
 
     def draw(self, context: bpy.types.Context):
@@ -32,7 +33,7 @@ class VolumeMaterial_Panel_NDE(bpy.types.Panel):
 
         layout.use_property_split = True
         layout.use_property_decorate = False
-        
+
         CommonMaterialUI(category="volume", layout=layout, mat=mat)
 
         if getattr(mat, "volume_hist_ready", False) and mat.volume_hist_image:
