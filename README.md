@@ -78,6 +78,16 @@ This panel allows to import and plot streamlines from a 3D vector field:
 | :----------------------------: | :---------------------------: | :------------------------------------: |
 |        Fieldline panel         |    Customizable fieldlines    |        Material for fieldlines         |
 
+### Pointcloud
+
+Using this panel, you can make either a scatter plot with sphere meshes or sample the points spread out in 3D space in a volume and color according to their density.
+
+- You can either supply an `.npz` file with `x`, `y`, and `z` coordinates of the points, or a `.csv` file.
+
+| ![](docs/pointcloud-panel.png) | ![](docs/pointcloud-volume-demo.jpg) |  ![](docs/Pointcloud-mesh-demo.png)   |
+| :----------------------------: | :----------------------------------: | :-----------------------------------: |
+|        Pointcloud panel        |  Volume rendering of a point cloud   | Mesh representation of the pointcloud |
+
 ### LaTeX
 
 You can use this panel to add $\LaTeX$-compiled text to the scene (e.g., labels, equations, etc). This functionality has been adapted from the beautiful [https://github.com/ghseeli/latex2blender](https://github.com/ghseeli/latex2blender) add-on.
@@ -105,4 +115,5 @@ You can use this panel to add $\LaTeX$-compiled text to the scene (e.g., labels,
 - [x] add arrows
 - [x] orientation axes
 - [ ] custom seed points for fieldlines
+- [x] rendering of pointcloud data
 - [ ] support for animations

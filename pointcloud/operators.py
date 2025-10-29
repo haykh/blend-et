@@ -2,7 +2,8 @@ import bpy
 
 from .utils import (
     Create_pointcloud_mesh,
-    Create_or_reset_pointcloud_material,
+    Create_or_reset_pointcloud_volume_material,
+    Create_or_reset_pointcloud_mesh_material,
     On_material_colormap_change,
 )
 
@@ -75,14 +76,21 @@ class Pointcloud_Create(bpy.types.Operator):
         raw_collection.hide_render = True
         raw_collection.hide_select = True
 
-        material = Create_or_reset_pointcloud_material(f"PointcloudMaterial_{uuid_str}")
+        material_volume = Create_or_reset_pointcloud_volume_material(
+            f"PointcloudVolumeMaterial_{uuid_str}"
+        )
+        material_mesh = Create_or_reset_pointcloud_mesh_material(
+            f"PointcloudMeshMaterial_{uuid_str}"
+        )
 
         raw_obj, _ = Encode_raw_data(
             data, context, raw_collection, "Pointcloud", uuid_str
         )
 
-        mesh = Create_pointcloud_mesh(context, raw_obj, material, uuid_str)
-        mesh.active_material = material
+        mesh = Create_pointcloud_mesh(
+            context, raw_obj, material_volume, material_mesh, uuid_str
+        )
+        mesh.active_material = material_volume
 
         return {"FINISHED"}
 
@@ -120,6 +128,6 @@ class PointcloudMaterial_CreateOrReset(bpy.types.Operator):
         if mat is None:
             self.report({"ERROR"}, "No active material on the selected object.")
             return {"CANCELLED"}
-        Create_or_reset_pointcloud_material(mat.name)
+        Create_or_reset_pointcloud_volume_material(mat.name)
         self.report({"INFO"}, f"Pointcloud material nodes ready on '{mat.name}'.")
         return {"FINISHED"}

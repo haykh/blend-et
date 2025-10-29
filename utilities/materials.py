@@ -69,7 +69,7 @@ def CommonMaterialUI(
 
 
 def CommonMaterialColormapChange(
-    cmap_attr: str,
+    cmap_attr,
     cmap_reversed_attr: bool,
     name: str,
     create_or_reset_callback: Callable,
@@ -85,6 +85,7 @@ def CommonMaterialColormapChange(
         stops = Stops_for_colormap(cm_id, reverse=rev)
         Apply_stops_to_colorramp(ramp_node.color_ramp, stops)
     return None
+
 
 def CommonMaterialReverseColormap(
     category: str,
