@@ -84,7 +84,7 @@ Using this panel, you can make either a scatter plot with sphere meshes or sampl
 
 - You can either supply an `.npz` file with `x`, `y`, and `z` coordinates of the points, or a `.csv` file.
 
-| ![](docs/pointcloud-panel.png) | ![](docs/pointcloud-volume-demo.jpg) |  ![](docs/Pointcloud-mesh-demo.png)   |
+| ![](docs/pointcloud-panel.png) | ![](docs/pointcloud-volume-demo.png) |  ![](docs/pointcloud-mesh-demo.png)   |
 | :----------------------------: | :----------------------------------: | :-----------------------------------: |
 |        Pointcloud panel        |  Volume rendering of a point cloud   | Mesh representation of the pointcloud |
 
