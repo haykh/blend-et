@@ -1,5 +1,4 @@
-import bpy, bmesh
-import numpy as np
+import bpy
 
 from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
     Resolve_cmap_id,
@@ -8,65 +7,9 @@ from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
 )
 
 from ..utilities.nodes import CreateNodes  # pyright: ignore[reportMissingImports]
-
-
-def Create_raw_data_fieldline(
-    data: dict[str, list[float] | np.ndarray],
-    context: bpy.types.Context,
-    collection: bpy.types.Collection | None = None,
-    i: int = 0,
-) -> tuple[bpy.types.Object, bpy.types.Collection]:
-    """Encodes a dictionary of arrays as a mesh with point attributes."""
-    if (scene := context.scene) is None:
-        raise RuntimeError("No active scene found")
-
-    npoints = len(data[list(data.keys())[0]])
-    assert all(
-        len(v) == npoints for v in data.values()
-    ), "Not all arrays have equal lengths"
-
-    if collection is None:
-        collection_ = bpy.data.collections.new("FieldlinesRaw")
-        scene.collection.children.link(collection_)
-    else:
-        collection_ = collection
-    collection_.hide_viewport = True
-    collection_.hide_render = True
-
-    def _find_layer_collection(layer_coll, target_coll):
-        if layer_coll.collection == target_coll:
-            return layer_coll
-        for ch in layer_coll.children:
-            f = _find_layer_collection(ch, target_coll)
-            if f:
-                return f
-        return None
-
-    for vl in scene.view_layers:
-        if lc := _find_layer_collection(vl.layer_collection, collection_):
-            lc.exclude = True
-
-    mesh = bpy.data.meshes.new(f"FieldlineRawMesh_{i}")
-    obj = bpy.data.objects.new(f"FieldlineRawObj_{i}", mesh)
-    collection_.objects.link(obj)
-
-    bm = bmesh.new()
-
-    for i in range(npoints):
-        bm.verts.new((i * 0.1, 0.0, 0.0))
-    bm.verts.ensure_lookup_table()
-
-    bm.to_mesh(mesh)
-    bm.free()
-
-    for k, v in data.items():
-        attr_k = mesh.attributes.new(name=k, type="FLOAT", domain="POINT")
-        for i in range(npoints):
-            attr_k.data[i].value = float(v[i])
-
-    mesh.update()
-
-    return obj, collection_
+from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+    CommonMaterialColormapChange,
+)
 
 
 def Create_fieldline_geometry(
@@ -305,6 +248,8 @@ def Create_or_reset_fieldline_material(name: str):
     if mat.node_tree is None:
         raise RuntimeError("Failed to access node tree of material")
 
+    mat["category"] = "fieldline"
+
     nodes = CreateNodes(
         node_kwargs=[
             [
@@ -357,18 +302,14 @@ def Create_or_reset_fieldline_material(name: str):
     return mat
 
 
-def On_material_colormap_change(self, context):
+def On_material_colormap_change(self, _: bpy.types.Context):
     """Update callback: self is the Material that owns 'fieldline_colormap'."""
     if not getattr(self, "use_nodes", False) or not self.node_tree:
         return None
-    nt = self.node_tree
-    ramp_node = nt.nodes.get("Colormap")
-    if ramp_node is None or ramp_node.type != "VALTORGB":
-        Create_or_reset_fieldline_material(self.name)
-        ramp_node = nt.nodes.get("Colormap")
-    if ramp_node:
-        cm_id = Resolve_cmap_id(getattr(self, "fieldline_colormap", 0))
-        rev = bool(getattr(self, "fieldline_colormap_reversed", False))
-        stops = Stops_for_colormap(cm_id, reverse=rev)
-        Apply_stops_to_colorramp(ramp_node.color_ramp, stops)
-    return None
+    CommonMaterialColormapChange(
+        cmap_attr=getattr(self, "fieldline_colormap", 0),
+        cmap_reversed_attr=bool(getattr(self, "fieldline_colormap_reversed", False)),
+        name=self.name,
+        create_or_reset_callback=Create_or_reset_fieldline_material,
+        nt=self.node_tree,
+    )

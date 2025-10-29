@@ -1,5 +1,9 @@
 import bpy
 
+from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+    CommonMaterialUI,
+)
+
 
 class FieldlineMaterial_Panel_NDE(bpy.types.Panel):
     bl_label = "Fieldline material"
@@ -16,6 +20,7 @@ class FieldlineMaterial_Panel_NDE(bpy.types.Panel):
             and getattr(space, "tree_type", "") == "ShaderNodeTree"
             and obj is not None
             and obj.active_material is not None
+            and obj.active_material.get("category", None) == "fieldline"
         )
 
     def draw(self, context: bpy.types.Context):
@@ -28,24 +33,7 @@ class FieldlineMaterial_Panel_NDE(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
-        layout.row().operator(
-            "blend_et.materials_create_or_reset_fieldline_material",
-            icon="NODETREE",
-            text="Create/reset fieldline material",
-        )
-        layout.separator()
-
-        box = layout.box()
-        box.row().label(text="Colormap", icon="COLOR")
-        box.row().template_icon_view(
-            mat, "fieldline_colormap", show_labels=True, scale=5
-        )
-
-        box.row().operator(
-            "blend_et.materials_reverse_fieldline_colormap",
-            icon="ARROW_LEFTRIGHT",
-            text="Reverse colormap",
-        )
+        CommonMaterialUI(category="fieldline", layout=layout, mat=mat)
 
 
 class Fieldlines_Panel_3DV(bpy.types.Panel):
@@ -89,7 +77,6 @@ class Fieldlines_Panel_3DV(bpy.types.Panel):
         box.row().prop(props, "integration_step")
         box.row().prop(props, "integration_maxiter")
 
-        
         box = layout.box()
         box.label(text="Seed points settings", icon="PARTICLES")
         box.row().prop(props, "seed_points")

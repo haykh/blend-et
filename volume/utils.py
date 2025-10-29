@@ -9,6 +9,9 @@ from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
 )
 
 from ..utilities.nodes import CreateNodes  # pyright: ignore[reportMissingImports]
+from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+    CommonMaterialColormapChange,
+)
 
 
 def Create_or_reset_volume_material(name) -> bpy.types.Material:
@@ -25,6 +28,8 @@ def Create_or_reset_volume_material(name) -> bpy.types.Material:
 
     if (nt := mat.node_tree) is None:
         raise RuntimeError("Failed to access node tree of material")
+    
+    mat["category"] = "volume"
 
     all_nodes = CreateNodes(
         node_kwargs=[
@@ -231,18 +236,14 @@ def Create_volume_object(context, store_path, abspath, uuid_str):
     return base_name, display_name, mat
 
 
-def On_material_colormap_change(self, context):
+def On_material_colormap_change(self, _: bpy.types.Context):
     """Update callback: self is the Material that owns 'volume_colormap'."""
     if not getattr(self, "use_nodes", False) or not self.node_tree:
         return None
-    nt = self.node_tree
-    ramp_node = nt.nodes.get("Colormap")
-    if ramp_node is None or ramp_node.type != "VALTORGB":
-        Create_or_reset_volume_material(self.name)
-        ramp_node = nt.nodes.get("Colormap")
-    if ramp_node:
-        cm_id = Resolve_cmap_id(getattr(self, "volume_colormap", 0))
-        rev = bool(getattr(self, "volume_colormap_reversed", False))
-        stops = Stops_for_colormap(cm_id, reverse=rev)
-        Apply_stops_to_colorramp(ramp_node.color_ramp, stops)
-    return None
+    CommonMaterialColormapChange(
+        cmap_attr=getattr(self, "volume_colormap", 0),
+        cmap_reversed_attr=bool(getattr(self, "volume_colormap_reversed", False)),
+        name=self.name,
+        create_or_reset_callback=Create_or_reset_volume_material,
+        nt=self.node_tree,
+    )

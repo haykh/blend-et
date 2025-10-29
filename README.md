@@ -4,6 +4,8 @@ Blend-ET is a plugin for the [Blender](https://www.blender.org/) 3D graphics sof
 
 > Note: the plugin has been tested primarily on Blender 4.4 and 4.5, if you have issues on newer versions -- please open an issue.
 
+> There are example files that come with the repository, so feel free to download them and play around. To download the test datasets as well as the example `.blend`, please use `git lfs` (i.e., `git lfs fetch` from the root directory of the repository).
+
 ## Installation
 
 Follow the instructions on the video below.
@@ -26,7 +28,8 @@ This panel provides quick access to commonly used settings:
 
 1. `Switch to Cycles`: sets the active rendering backend to `Cycles` (needed for volume rendering);
 2. `Fix Colors`: disables the default filmic color-correction for better accuracy;
-3. `Set Background Color`: changes the background color to a defined value.
+3. `Set Background Color`: changes the background color to a defined value;
+4. `Clear Unused Data`: garbage-collect all the data which is not currently linked to any scene.
 
 | ![](docs/tools-panel.png) |
 | :-----------------------: |
@@ -77,6 +80,16 @@ This panel allows to import and plot streamlines from a 3D vector field:
 | :----------------------------: | :---------------------------: | :------------------------------------: |
 |        Fieldline panel         |    Customizable fieldlines    |        Material for fieldlines         |
 
+### Pointcloud
+
+Using this panel, you can make either a scatter plot with sphere meshes or sample the points spread out in 3D space in a volume and color according to their density.
+
+- You can either supply an `.npz` file with `x`, `y`, and `z` coordinates of the points, or a `.csv` file.
+
+| ![](docs/pointcloud-panel.png) | ![](docs/pointcloud-volume-demo.png) |  ![](docs/pointcloud-mesh-demo.png)   |
+| :----------------------------: | :----------------------------------: | :-----------------------------------: |
+|        Pointcloud panel        |  Volume rendering of a point cloud   | Mesh representation of the pointcloud |
+
 ### LaTeX
 
 You can use this panel to add $\LaTeX$-compiled text to the scene (e.g., labels, equations, etc). This functionality has been adapted from the beautiful [https://github.com/ghseeli/latex2blender](https://github.com/ghseeli/latex2blender) add-on.
@@ -104,4 +117,5 @@ You can use this panel to add $\LaTeX$-compiled text to the scene (e.g., labels,
 - [x] add arrows
 - [x] orientation axes
 - [ ] custom seed points for fieldlines
+- [x] rendering of pointcloud data
 - [ ] support for animations
