@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 import numpy as np
+from mathutils import Color
 
 
 def Encode_raw_data(
@@ -61,3 +62,10 @@ def Encode_raw_data(
     mesh.update()
 
     return obj, collection_
+
+
+def srgb_to_linear_rgba(color):
+    r, g, b, *rest = color
+    a = rest[0] if rest else 1.0
+    linear = Color((r, g, b)).from_srgb_to_scene_linear()
+    return (linear.r, linear.g, linear.b, a)

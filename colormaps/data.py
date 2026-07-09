@@ -1,8 +1,9 @@
 import bpy
 import bpy.utils.previews
 
+from ..utilities.data import srgb_to_linear_rgba
 
-COLORMAPS = {
+COLORMAPS_SRGB = {
     "fire": [
         (0.0, (0.0, 0.0, 0.0)),
         (0.0625, (0.19607843, 0.0, 0.0)),
@@ -193,6 +194,11 @@ COLORMAPS = {
         (0.9375, (0.002306805074971165, 0.33217993079584773, 0.2943483275663207)),
         (1.0, (0.0, 0.23529411764705882, 0.18823529411764706)),
     ],
+}
+
+COLORMAPS = {
+    cm_id: [(t, srgb_to_linear_rgba(col)) for t, col in stops]
+    for cm_id, stops in COLORMAPS_SRGB.items()
 }
 
 

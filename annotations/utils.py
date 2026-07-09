@@ -2,6 +2,7 @@ from typing import Any, cast
 import bpy
 
 from ..utilities.nodes import CreateNodes
+from ..utilities.data import srgb_to_linear_rgba
 
 
 def Add_simple_material_to_object(
@@ -347,7 +348,7 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "GeometryNodeInstanceOnPoints",
                         "label": "Instance On Points",
-                        "input_defaults": {5: (-1.5707963705062866, 0.0, 0.0)},
+                        "input_defaults": {"Rotation": (-1.5707963705062866, 0.0, 0.0)},
                     },
                 ],
                 [
@@ -692,7 +693,7 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "GeometryNodeTransform",
                         "label": "Transform Plane2 Preliminary",
-                        "input_defaults": {2: (0, 0, 1.5708)},
+                        "input_defaults": {"Rotation": (0, 0, 1.5708)},
                         "height": 1.5,
                     },
                     {
@@ -1734,44 +1735,52 @@ def Origin_axes_node(mat: bpy.types.Material | None = None) -> bpy.types.NodeTre
                 "name": "X Color",
                 "in_out": "INPUT",
                 "type": "NodeSocketColor",
-                "default_value": (
-                    0.9647058823529412,
-                    0.21176470588235294,
-                    0.3215686274509804,
-                    1.0,
+                "default_value": srgb_to_linear_rgba(
+                    (
+                        0.9647058823529412,
+                        0.21176470588235294,
+                        0.3215686274509804,
+                        1.0,
+                    )
                 ),
             },
             {
                 "name": "Y Color",
                 "in_out": "INPUT",
                 "type": "NodeSocketColor",
-                "default_value": (
-                    0.49411764705882355,
-                    0.7607843137254902,
-                    0.07058823529411765,
-                    1.0,
+                "default_value": srgb_to_linear_rgba(
+                    (
+                        0.49411764705882355,
+                        0.7607843137254902,
+                        0.07058823529411765,
+                        1.0,
+                    )
                 ),
             },
             {
                 "name": "Z Color",
                 "in_out": "INPUT",
                 "type": "NodeSocketColor",
-                "default_value": (
-                    0.1843137254901961,
-                    0.5176470588235295,
-                    0.8941176470588236,
-                    1.0,
+                "default_value": srgb_to_linear_rgba(
+                    (
+                        0.1843137254901961,
+                        0.5176470588235295,
+                        0.8941176470588236,
+                        1.0,
+                    )
                 ),
             },
             {
                 "name": "Origin Color",
                 "in_out": "INPUT",
                 "type": "NodeSocketColor",
-                "default_value": (
-                    0.19607843137254902,
-                    0.19607843137254902,
-                    0.19607843137254902,
-                    1.0,
+                "default_value": srgb_to_linear_rgba(
+                    (
+                        0.19607843137254902,
+                        0.19607843137254902,
+                        0.19607843137254902,
+                        1.0,
+                    )
                 ),
             },
             {
