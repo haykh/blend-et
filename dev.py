@@ -3,8 +3,9 @@ import sys
 import importlib
 
 from . import colormaps, tools, annotations, volume, fieldlines, pointcloud, latex
+from .utilities.types import OperatorReturnItems
 
-ADDON_PKG = str(__package__).split(".")[0]
+ADDON_PKG = str(__package__)
 
 SUBMODULES = (colormaps, tools, annotations, volume, fieldlines, pointcloud, latex)
 
@@ -86,7 +87,7 @@ class DevReload(bpy.types.Operator):
     bl_label = "Reload Blend-ET"
     bl_options = {"INTERNAL"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         try:
             UnregisterAll(include_dev=False)
 

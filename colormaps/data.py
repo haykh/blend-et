@@ -261,12 +261,16 @@ def Build_colormap_previews():
     for cm_id, stops in COLORMAPS.items():
         p = pcoll.new(cm_id)
         p.image_size = (img_w, img_h)
-        p.image_pixels_float[:] = (  # pyright: ignore[reportIndexIssue]
-            _render_gradient_pixels(stops, img_w, img_h)
+        setattr(
+            p,
+            "image_pixels_float",
+            _render_gradient_pixels(stops, img_w, img_h),
         )
         p.icon_size = (ico_w, ico_h)
-        p.icon_pixels_float[:] = (  # pyright: ignore[reportIndexIssue]
-            _render_gradient_pixels(stops, ico_w, ico_h)
+        setattr(
+            p,
+            "icon_pixels_float",
+            _render_gradient_pixels(stops, ico_w, ico_h),
         )
     _PREVIEW_COLLECTIONS["colormaps"] = pcoll
     return pcoll

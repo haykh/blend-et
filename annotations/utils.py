@@ -1,8 +1,7 @@
-from typing import Any
+from typing import Any, cast
 import bpy
-from numpy import empty
 
-from ..utilities.nodes import CreateNodes  # pyright: ignore[reportMissingImports]
+from ..utilities.nodes import CreateNodes
 
 
 def Add_simple_material_to_object(
@@ -27,7 +26,8 @@ def Add_simple_material_to_object(
         raise ValueError("Failed to get object data")
 
     if obj.data.materials:
-        obj.data.materials[0] = mat
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
     else:
         obj.data.materials.append(mat)
 
@@ -968,6 +968,7 @@ def Axes_grid_geometry_node(
                 {
                     "type_id": "GeometryNodeSwitch",
                     "label": f"Switch {sign}{XYZ}",
+                    "input_type": "GEOMETRY",
                 }
                 for sign in "+-"
                 for XYZ in "XYZ"
@@ -1043,34 +1044,37 @@ def Axes_grid_geometry_node(
                 "type": "NodeSocketGeometry",
             },
         ],
-        node_links=[
-            (("GroupInput", quantity), (f"{sign}{XYZ}", quantity))
-            for quantity in ["Sizes", "Deltas"]
-            for XYZ in "XYZ"
-            for sign in "+-"
-        ]
-        + [
-            ((f"{sign}{XYZ}", "Plane"), (f"Switch{sign}{XYZ}", "True"))
-            for XYZ in "XYZ"
-            for sign in "+-"
-        ]
-        + [
-            (("GroupInput", f"{sign}{XYZ}"), (f"Switch{sign}{XYZ}", "Switch"))
-            for XYZ in "XYZ"
-            for sign in "+-"
-        ]
-        + [
-            ((f"Switch{sign}{XYZ}", "Output"), (f"JoinGeometry", 0))
-            for XYZ in "XYZ"
-            for sign in "+-"
-        ]
-        + [
-            (("JoinGeometry", 0), ("Outline", "Curve")),
-            (("GroupInput", "Resolution"), ("Outline", "Resolution")),
-            (("GroupInput", "Radius"), ("Outline", "Radius")),
-            (("Outline", "Mesh"), ("SetMaterial", "Geometry")),
-            (("SetMaterial", "Geometry"), ("GroupOutput", "Geometry")),
-        ],  # pyright: ignore[reportArgumentType]
+        node_links=cast(
+            list[tuple[tuple[str, int | str], tuple[str, int | str]]],
+            [
+                (("GroupInput", quantity), (f"{sign}{XYZ}", quantity))
+                for quantity in ["Sizes", "Deltas"]
+                for XYZ in "XYZ"
+                for sign in "+-"
+            ]
+            + [
+                ((f"{sign}{XYZ}", "Plane"), (f"Switch{sign}{XYZ}", "True"))
+                for XYZ in "XYZ"
+                for sign in "+-"
+            ]
+            + [
+                (("GroupInput", f"{sign}{XYZ}"), (f"Switch{sign}{XYZ}", "Switch"))
+                for XYZ in "XYZ"
+                for sign in "+-"
+            ]
+            + [
+                ((f"Switch{sign}{XYZ}", "Output"), ("JoinGeometry", 0))
+                for XYZ in "XYZ"
+                for sign in "+-"
+            ]
+            + [
+                (("JoinGeometry", 0), ("Outline", "Curve")),
+                (("GroupInput", "Resolution"), ("Outline", "Resolution")),
+                (("GroupInput", "Radius"), ("Outline", "Radius")),
+                (("Outline", "Mesh"), ("SetMaterial", "Geometry")),
+                (("SetMaterial", "Geometry"), ("GroupOutput", "Geometry")),
+            ],
+        ),
         node_tree=axes_grid,
         clear=True,
     )
@@ -1384,7 +1388,7 @@ def Arrow_geometry_node(mat: bpy.types.Material) -> bpy.types.NodeTree:
     flat_arrow = make_flat_arrow()
 
     arrow_obj = bpy.data.node_groups.new(type="GeometryNodeTree", name="Arrow")
-    all_nodes = CreateNodes(
+    CreateNodes(
         node_kwargs=[
             [
                 {
@@ -1782,36 +1786,39 @@ def Origin_axes_node(mat: bpy.types.Material | None = None) -> bpy.types.NodeTre
                 "type": "NodeSocketGeometry",
             },
         ],
-        node_links=[
-            (("GroupInput", q_left), (f"{XYZ}Axis", q_right))
-            for XYZ in "XYZ"
-            for q_left, q_right in zip(
-                ["Lengths", "Thicknesses", "Arrowsizes", "Resolution"],
-                ["Length", "Radius", "Arrowsize", "Resolution"],
-            )
-        ]
-        + [
-            (("GroupInput", f"{attr} Color"), (f"Store{attr}Color", "Value"))
-            for attr in ["X", "Y", "Z", "Origin"]
-        ]
-        + [
-            (("GroupInput", "Origin Radius"), ("Origin", "Radius")),
-            (("GroupInput", "Resolution"), ("Origin", "Segments")),
-            (("GroupInput", "Resolution"), ("HalfResolution", 0)),
-            (("HalfResolution", 0), ("Origin", "Rings")),
-        ]
-        + [
-            ((f"{XYZ}Axis", "Geometry"), (f"Store{XYZ}Color", "Geometry"))
-            for XYZ in "XYZ"
-        ]
-        + [((f"Store{XYZ}Color", "Geometry"), ("JoinGeometry", 0)) for XYZ in "XYZ"]
-        + [
-            (("Origin", "Mesh"), ("StoreOriginColor", "Geometry")),
-            (("StoreOriginColor", "Geometry"), ("JoinGeometry", 0)),
-            (("JoinGeometry", 0), ("SmoothShade", "Geometry")),
-            (("SmoothShade", "Geometry"), ("SetMaterial", "Geometry")),
-            (("SetMaterial", "Geometry"), ("GroupOutput", "Geometry")),
-        ],  # pyright: ignore[reportArgumentType]
+        node_links=cast(
+            list[tuple[tuple[str, int | str], tuple[str, int | str]]],
+            [
+                (("GroupInput", q_left), (f"{XYZ}Axis", q_right))
+                for XYZ in "XYZ"
+                for q_left, q_right in zip(
+                    ["Lengths", "Thicknesses", "Arrowsizes", "Resolution"],
+                    ["Length", "Radius", "Arrowsize", "Resolution"],
+                )
+            ]
+            + [
+                (("GroupInput", f"{attr} Color"), (f"Store{attr}Color", "Value"))
+                for attr in ["X", "Y", "Z", "Origin"]
+            ]
+            + [
+                (("GroupInput", "Origin Radius"), ("Origin", "Radius")),
+                (("GroupInput", "Resolution"), ("Origin", "Segments")),
+                (("GroupInput", "Resolution"), ("HalfResolution", 0)),
+                (("HalfResolution", 0), ("Origin", "Rings")),
+            ]
+            + [
+                ((f"{XYZ}Axis", "Geometry"), (f"Store{XYZ}Color", "Geometry"))
+                for XYZ in "XYZ"
+            ]
+            + [((f"Store{XYZ}Color", "Geometry"), ("JoinGeometry", 0)) for XYZ in "XYZ"]
+            + [
+                (("Origin", "Mesh"), ("StoreOriginColor", "Geometry")),
+                (("StoreOriginColor", "Geometry"), ("JoinGeometry", 0)),
+                (("JoinGeometry", 0), ("SmoothShade", "Geometry")),
+                (("SmoothShade", "Geometry"), ("SetMaterial", "Geometry")),
+                (("SetMaterial", "Geometry"), ("GroupOutput", "Geometry")),
+            ],
+        ),
         node_tree=axes,
         clear=True,
     )

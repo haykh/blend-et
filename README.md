@@ -119,3 +119,29 @@ You can use this panel to add $\LaTeX$-compiled text to the scene (e.g., labels,
 - [ ] custom seed points for fieldlines
 - [x] rendering of pointcloud data
 - [ ] support for animations
+
+## Development
+
+Create python venv and install the requirements:
+
+```sh
+# linux:
+python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+```
+
+```powershell
+# windows
+python -m venv .venv && .\.venv\Scripts\activate.ps1 && pip install -r requirements.txt
+```
+
+Then make a symlink from the current development path to the Blender extension path (path below is valid for Blender 5.1+):
+
+```sh
+# linux
+...
+```
+
+```powershell
+# windows
+mklink /J "%APPDATA%\Blender Foundation\Blender\5.1\extensions\user_default\blend_et" "\abspath\to\blend_et\"
+```

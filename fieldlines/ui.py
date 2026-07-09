@@ -1,6 +1,6 @@
 import bpy
 
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.materials import (
     CommonMaterialUI,
 )
 

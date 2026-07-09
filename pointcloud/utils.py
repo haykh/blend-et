@@ -1,13 +1,13 @@
 import bpy
 
-from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
+from ..colormaps.data import (
     Resolve_cmap_id,
     Stops_for_colormap,
     Apply_stops_to_colorramp,
 )
 
-from ..utilities.nodes import CreateNodes  # pyright: ignore[reportMissingImports]
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.nodes import CreateNodes
+from ..utilities.materials import (
     CommonMaterialColormapChange,
 )
 
@@ -378,7 +378,7 @@ def Create_or_reset_pointcloud_mesh_material(name: str):
 
     mat["category"] = "pointcloud_mesh"
 
-    nodes = CreateNodes(
+    CreateNodes(
         node_kwargs=[
             [
                 {

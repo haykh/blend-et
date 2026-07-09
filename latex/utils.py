@@ -1,5 +1,9 @@
-import bpy  # type: ignore
-import os, glob, math, subprocess
+import bpy
+import os
+import glob
+import math
+import subprocess
+import shutil
 
 
 def _error_msg(message, title):
@@ -170,10 +174,10 @@ def Compile_with_latex(
                 {"ERROR"},
                 "Please check your LaTeX code for errors and that LaTeX and dvisvgm are properly "
                 "installed and their paths are specified correctly. Also, if using a custom preamble, check that it is formatted correctly. \n"
-                "Tex return code " + str(tex_process.returncode) + "\n"
-                "dvi2svgm return code " + str(dvisvgm_process.returncode) + "\n"
-                "Tex error message: " + str(tex_process.stdout) + "\n"
-                "dvi2svgm error message: " + str(dvisvgm_process.stdout),
+                f"Tex return code {tex_process.returncode}\n"
+                f"dvi2svgm return code {dvisvgm_process.returncode}\n"
+                f"Tex error message: {tex_process.stdout}\n"
+                f"dvi2svgm error message: {dvisvgm_process.stdout}",
             )
 
         else:
@@ -211,7 +215,7 @@ def Compile_with_latex(
 
             # Move mesh to scene collection and delete the temp.svg collection. Then rename mesh.
             temp_svg_collection = active_obj.users_collection[0]
-            bpy.ops.object.move_to_collection(collection_index=0)
+            bpy.ops.object.move_to_collection(collection_uid=0)
             bpy.data.collections.remove(temp_svg_collection)
             active_obj.name = "LaTeX Figure"
 
@@ -227,7 +231,7 @@ def Compile_with_latex(
                 )
 
                 # Moves to scene collection, fixes name.
-                bpy.ops.object.move_to_collection(collection_index=0)
+                bpy.ops.object.move_to_collection(collection_uid=0)
                 bpy.context.selected_objects[0].name = "LaTeX Figure"
                 if custom_material_bool:
                     bpy.context.selected_objects[0].material_slots[

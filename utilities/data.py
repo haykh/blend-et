@@ -15,9 +15,9 @@ def Encode_raw_data(
         raise RuntimeError("No active scene found")
 
     npoints = len(data[list(data.keys())[0]])
-    assert all(
-        len(v) == npoints for v in data.values()
-    ), "Not all arrays have equal lengths"
+    assert all(len(v) == npoints for v in data.values()), (
+        "Not all arrays have equal lengths"
+    )
 
     if collection is None:
         collection_ = bpy.data.collections.new(f"{prefix}Raw{suffix}")

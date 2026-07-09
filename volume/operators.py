@@ -11,9 +11,10 @@ from .utils import (
     Clear_histogram_on_material,
     On_material_colormap_change,
 )
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.materials import (
     CommonMaterialReverseColormap,
 )
+from ..utilities.types import OperatorReturnItems
 
 
 class VolumeMaterial_ReverseColormap(bpy.types.Operator):
@@ -22,14 +23,14 @@ class VolumeMaterial_ReverseColormap(bpy.types.Operator):
     bl_description = "Reverse the active material's colormap"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         try:
             CommonMaterialReverseColormap(
                 category="volume",
                 on_colormap_change_callback=On_material_colormap_change,
                 ctx=context,
             )
-            self.report({"INFO"}, f"Colormap reversed")
+            self.report({"INFO"}, "Colormap reversed")
             return {"FINISHED"}
         except Exception as e:
             self.report({"ERROR"}, f"Failed to reverse colormap: {e}")
@@ -44,7 +45,7 @@ class VolumeMaterial_CreateOrReset(bpy.types.Operator):
     )
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         mat = getattr(context.object, "active_material", None)
         if mat is None:
             self.report({"ERROR"}, "No active material on the selected object.")
@@ -60,7 +61,7 @@ class Volume_ImportVDB(bpy.types.Operator):
     bl_description = "Import a .vdb file and create a volume object"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
@@ -97,7 +98,7 @@ class Volume_ImportNumpy(bpy.types.Operator):
     )
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         import os
 
         if (scene := context.scene) is None:

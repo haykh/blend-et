@@ -1,8 +1,14 @@
 import bpy
 
-from .utils import Add_simple_material_to_object, Axes_grid_geometry_node, Arrow_geometry_node, Origin_axes_node  # type: ignore
+from .utils import (
+    Add_simple_material_to_object,
+    Axes_grid_geometry_node,
+    Arrow_geometry_node,
+    Origin_axes_node,
+)
 
-from ..utilities.nodes import CreateNodes  # pyright: ignore[reportMissingImports]
+from ..utilities.nodes import CreateNodes
+from ..utilities.types import OperatorReturnItems
 
 
 class Annotations_AddAxesGrid(bpy.types.Operator):
@@ -11,7 +17,7 @@ class Annotations_AddAxesGrid(bpy.types.Operator):
     bl_description = "Add a customizable mesh for representing the axes of the grid"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
@@ -37,7 +43,8 @@ class Annotations_AddAxesGrid(bpy.types.Operator):
         if len(empty.data.materials) == 0:
             empty.data.materials.append(mat)
         else:
-            empty.data.materials[0] = mat
+            empty.data.materials.clear()
+            empty.data.materials.append(mat)
 
         mod = empty.modifiers.new(name="GeometryNodes", type="NODES")
         mod.node_group = Axes_grid_geometry_node(mat)
@@ -50,7 +57,7 @@ class Annotations_AddArrow(bpy.types.Operator):
     bl_description = "Add a customizable arrow mesh"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
@@ -76,7 +83,8 @@ class Annotations_AddArrow(bpy.types.Operator):
         if len(empty.data.materials) == 0:
             empty.data.materials.append(mat)
         else:
-            empty.data.materials[0] = mat
+            empty.data.materials.clear()
+            empty.data.materials.append(mat)
 
         mod = empty.modifiers.new(name="GeometryNodes", type="NODES")
         mod.node_group = Arrow_geometry_node(mat)
@@ -91,7 +99,7 @@ class Annotations_AddAxes(bpy.types.Operator):
     bl_description = "Add a customizable axes indicator mesh"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
@@ -149,7 +157,8 @@ class Annotations_AddAxes(bpy.types.Operator):
         if len(empty.data.materials) == 0:
             empty.data.materials.append(mat)
         else:
-            empty.data.materials[0] = mat
+            empty.data.materials.clear()
+            empty.data.materials.append(mat)
 
         mod = empty.modifiers.new(name="GeometryNodes", type="NODES")
         mod.node_group = Origin_axes_node(mat)

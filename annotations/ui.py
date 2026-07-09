@@ -7,7 +7,7 @@ class Annotations_Panel_3DV(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "BlendET"
 
-    def draw(self, _: bpy.types.Context):
+    def draw(self, context: bpy.types.Context):
         if (layout := self.layout) is None:
             return
         layout.operator("blend_et.annotations_add_axes_grid", icon="MESH_GRID")

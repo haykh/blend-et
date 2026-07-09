@@ -9,10 +9,16 @@ type = "add-on"
 
 website = "https://github.com/haykh/blend-et/"
 
-tags = ["Add Mesh", "Geometry Nodes", "Import-Export", "Material", "Mesh", "Node", "User Interface"]
+tags = [
+  "Add Mesh",
+  "Geometry Nodes",
+  "Import-Export",
+  "Material",
+  "Mesh",
+  "Node",
+  "User Interface",
+]
 
 blender_version_min = "4.4.0"
 
-license = [
-  "SPDX:GPL-3.0-or-later",
-]
+license = ["SPDX:GPL-3.0-or-later"]

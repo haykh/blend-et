@@ -37,7 +37,7 @@ def CreateNodes(
         return n
 
     def _new_link(a, b):
-        if not b.links or all(l.from_socket is not a for l in b.links):
+        if not b.links or all(lnk.from_socket is not a for lnk in b.links):
             links.new(a, b)
 
     all_nodes = {}

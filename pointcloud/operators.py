@@ -7,10 +7,11 @@ from .utils import (
     On_material_colormap_change,
 )
 
-from ..utilities.data import Encode_raw_data  # pyright: ignore[reportMissingImports]
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.data import Encode_raw_data
+from ..utilities.materials import (
     CommonMaterialReverseColormap,
 )
+from ..utilities.types import OperatorReturnItems
 
 
 class Pointcloud_Create(bpy.types.Operator):
@@ -19,7 +20,7 @@ class Pointcloud_Create(bpy.types.Operator):
     bl_description = "Create a pointcloud from the selected data file"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
@@ -101,14 +102,14 @@ class PointcloudMaterial_ReverseColormap(bpy.types.Operator):
     bl_description = "Reverse the active material's colormap"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         try:
             CommonMaterialReverseColormap(
                 category="pointcloud",
                 on_colormap_change_callback=On_material_colormap_change,
                 ctx=context,
             )
-            self.report({"INFO"}, f"Colormap reversed")
+            self.report({"INFO"}, "Colormap reversed")
             return {"FINISHED"}
         except Exception as e:
             self.report({"ERROR"}, f"Failed to reverse colormap: {e}")
@@ -123,7 +124,7 @@ class PointcloudMaterial_CreateOrReset(bpy.types.Operator):
     )
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         mat = getattr(context.object, "active_material", None)
         if mat is None:
             self.report({"ERROR"}, "No active material on the selected object.")

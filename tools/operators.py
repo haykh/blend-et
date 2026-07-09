@@ -1,5 +1,7 @@
 import bpy
 
+from ..utilities.types import OperatorReturnItems
+
 
 class Tools_SwitchToCycles(bpy.types.Operator):
     bl_idname = "blend_et.switch_to_cycles"
@@ -7,11 +9,11 @@ class Tools_SwitchToCycles(bpy.types.Operator):
     bl_description = "Switch render engine to Cycles"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
-        scene.render.engine = "CYCLES"
+        setattr(scene.render, "engine", "CYCLES")
         if (
             (prefs := bpy.context.preferences) is None
             or (addons := prefs.addons) is None
@@ -34,14 +36,14 @@ class Tools_FixColors(bpy.types.Operator):
     bl_description = "Fix color management settings for scientific visualization"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
         if (view_settings := scene.view_settings) is None:
             self.report({"ERROR"}, "Failed to access scene view settings")
             return {"CANCELLED"}
-        view_settings.view_transform = "Standard"
+        setattr(view_settings, "view_transform", "Standard")
         return {"FINISHED"}
 
 
@@ -51,7 +53,7 @@ class Tools_SetBackground(bpy.types.Operator):
     bl_description = "Set background color for the scene"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
@@ -80,6 +82,6 @@ class Tools_ClearUnusedData(bpy.types.Operator):
     bl_description = "Remove all unused data blocks from the blend file"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         bpy.ops.outliner.orphans_purge(do_recursive=True)
         return {"FINISHED"}

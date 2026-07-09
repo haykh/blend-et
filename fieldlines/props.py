@@ -4,7 +4,7 @@ from .utils import (
     On_material_colormap_change,
 )
 
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.materials import (
     CommonMaterial_Props,
 )
 

@@ -2,14 +2,14 @@ import bpy
 
 import numpy as np
 
-from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
+from ..colormaps.data import (
     Resolve_cmap_id,
     Stops_for_colormap,
     Apply_stops_to_colorramp,
 )
 
-from ..utilities.nodes import CreateNodes  # pyright: ignore[reportMissingImports]
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.nodes import CreateNodes
+from ..utilities.materials import (
     CommonMaterialColormapChange,
 )
 
@@ -28,7 +28,7 @@ def Create_or_reset_volume_material(name) -> bpy.types.Material:
 
     if (nt := mat.node_tree) is None:
         raise RuntimeError("Failed to access node tree of material")
-    
+
     mat["category"] = "volume"
 
     all_nodes = CreateNodes(
@@ -125,7 +125,7 @@ def Store_histogram_on_material(
     width: int = 256,
     height: int = 256,
 ):
-    bins = int(hist.size)
+    bins = hist.size
     # --- draw pixels ---
     px = np.empty((height, width, 4), dtype=np.float32)
 
@@ -176,14 +176,14 @@ def Store_histogram_on_material(
         )
         if (img_col_settings := img.colorspace_settings) is None:
             raise RuntimeError("Failed to access color space settings of new image")
-        img_col_settings.name = "Non-Color"
+        setattr(img_col_settings, "name", "Non-Color")
         img.alpha_mode = "STRAIGHT"
         img.use_fake_user = True
     else:
         if img.size[0] != width or img.size[1] != height:
             img.scale(width, height)
 
-    img.pixels[:] = px.ravel().tolist()  # pyright: ignore[reportIndexIssue]
+    setattr(img, "pixels", px.ravel().tolist())
     img.update()
     img.preview_ensure()
 
@@ -231,7 +231,8 @@ def Create_volume_object(context, store_path, abspath, uuid_str):
     if len(obj_data.materials) == 0:
         obj_data.materials.append(mat)
     else:
-        obj_data.materials[0] = mat
+        obj_data.materials.clear()
+        obj_data.materials.append(mat)
 
     return base_name, display_name, mat
 

@@ -3,13 +3,14 @@ import bpy
 import tempfile
 
 from .utils import Compile_with_latex
+from ..utilities.types import OperatorReturnItems
 
 
 class Latex_CompileAsMesh(bpy.types.Operator):
     bl_idname = "blend_et.latex_compile_as_mesh"
     bl_label = "Compile LaTeX as mesh"
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
@@ -71,7 +72,7 @@ class Latex_CompileAsGreasePencil(bpy.types.Operator):
     bl_idname = "blend_et.latex_compile_as_grease_pencil"
     bl_label = "Compile LaTeX as grease pencil"
 
-    def execute(self, context: bpy.types.Context):
+    def execute(self, context: bpy.types.Context) -> set[OperatorReturnItems]:
         if (scene := context.scene) is None:
             self.report({"ERROR"}, "No active scene found")
             return {"CANCELLED"}
