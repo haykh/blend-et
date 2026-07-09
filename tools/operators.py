@@ -27,6 +27,7 @@ class Tools_SwitchToCycles(bpy.types.Operator):
             return {"FINISHED"}
         if cycles_prefs.compute_device_type != "NONE":
             scene.cycles.device = "GPU"
+        scene.cycles.volume_biased = True
         return {"FINISHED"}
 
 
