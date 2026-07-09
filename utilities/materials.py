@@ -2,7 +2,7 @@ import bpy
 from typing import Callable
 
 
-from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
+from ..colormaps.data import (
     Resolve_cmap_id,
     Stops_for_colormap,
     Apply_stops_to_colorramp,

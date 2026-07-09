@@ -5,7 +5,7 @@ from ..utilities.materials import (
 )
 
 
-class PointcloudMaterial_Panel_NDE(bpy.types.Panel):
+class BLENDET_PT_pointcloud_material_nde(bpy.types.Panel):
     bl_label = "Pointcloud material"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = "UI"
@@ -36,7 +36,7 @@ class PointcloudMaterial_Panel_NDE(bpy.types.Panel):
         CommonMaterialUI(category="pointcloud", layout=layout, mat=mat)
 
 
-class Pointcloud_Panel_3DV(bpy.types.Panel):
+class BLENDET_PT_pointcloud_3dv(bpy.types.Panel):
     bl_label = "Pointcloud"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

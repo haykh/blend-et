@@ -1,7 +1,7 @@
 import bpy
 
 
-class Tools_Panel_3DV(bpy.types.Panel):
+class BLENDET_PT_tools_3dv(bpy.types.Panel):
     bl_label = "Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

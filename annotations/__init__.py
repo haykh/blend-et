@@ -8,14 +8,14 @@ def classes():
         Annotations_AddArrow,
         Annotations_AddAxes,
     )
-    from .ui import Annotations_Panel_3DV
+    from .ui import BLENDET_PT_annotations_3dv
 
     return (
         Annotations_Props,
         Annotations_AddAxesGrid,
         Annotations_AddArrow,
         Annotations_AddAxes,
-        Annotations_Panel_3DV,
+        BLENDET_PT_annotations_3dv,
     )
 
 

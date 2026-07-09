@@ -1,12 +1,12 @@
 import bpy
 
 
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.materials import (
     CommonMaterialUI,
 )
 
 
-class VolumeMaterial_Panel_NDE(bpy.types.Panel):
+class BLENDET_PT_volume_material_nde(bpy.types.Panel):
     bl_label = "Volume material"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = "UI"
@@ -61,7 +61,7 @@ class VolumeMaterial_Panel_NDE(bpy.types.Panel):
             box.row().label(text="Quantiles shown with red lines", icon="INFO")
 
 
-class Volume_Panel_3DV(bpy.types.Panel):
+class BLENDET_PT_volume_3dv(bpy.types.Panel):
     bl_label = "Volume Rendering"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

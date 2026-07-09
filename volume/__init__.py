@@ -9,7 +9,7 @@ def classes():
         Volume_ImportVDB,
         Volume_ImportNumpy,
     )
-    from .ui import VolumeMaterial_Panel_NDE, Volume_Panel_3DV
+    from .ui import BLENDET_PT_volume_material_nde, BLENDET_PT_volume_3dv
 
     return (
         Volume_Props,
@@ -17,8 +17,8 @@ def classes():
         Volume_ImportNumpy,
         VolumeMaterial_ReverseColormap,
         VolumeMaterial_CreateOrReset,
-        Volume_Panel_3DV,
-        VolumeMaterial_Panel_NDE,
+        BLENDET_PT_volume_3dv,
+        BLENDET_PT_volume_material_nde,
     )
 
 

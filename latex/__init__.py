@@ -4,13 +4,13 @@ import bpy
 def classes():
     from .props import Latex_Props
     from .operators import Latex_CompileAsMesh, Latex_CompileAsGreasePencil
-    from .ui import Latex_Panel_3DV
+    from .ui import BLENDET_PT_latex_3dv
 
     return (
         Latex_Props,
         Latex_CompileAsMesh,
         Latex_CompileAsGreasePencil,
-        Latex_Panel_3DV,
+        BLENDET_PT_latex_3dv,
     )
 
 

@@ -5,7 +5,7 @@ from ..utilities.materials import (
 )
 
 
-class FieldlineMaterial_Panel_NDE(bpy.types.Panel):
+class BLENDET_PT_fieldline_material_nde(bpy.types.Panel):
     bl_label = "Fieldline material"
     bl_space_type = "NODE_EDITOR"
     bl_region_type = "UI"
@@ -36,7 +36,7 @@ class FieldlineMaterial_Panel_NDE(bpy.types.Panel):
         CommonMaterialUI(category="fieldline", layout=layout, mat=mat)
 
 
-class Fieldlines_Panel_3DV(bpy.types.Panel):
+class BLENDET_PT_fieldlines_3dv(bpy.types.Panel):
     bl_label = "Fieldlines"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

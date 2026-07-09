@@ -8,15 +8,15 @@ def classes():
         FieldlineMaterial_CreateOrReset,
         FieldlineMaterial_ReverseColormap,
     )
-    from .ui import FieldlineMaterial_Panel_NDE, Fieldlines_Panel_3DV
+    from .ui import BLENDET_PT_fieldline_material_nde, BLENDET_PT_fieldlines_3dv
 
     return (
         Fieldlines_Props,
         Fieldlines_Create,
         FieldlineMaterial_CreateOrReset,
         FieldlineMaterial_ReverseColormap,
-        FieldlineMaterial_Panel_NDE,
-        Fieldlines_Panel_3DV,
+        BLENDET_PT_fieldline_material_nde,
+        BLENDET_PT_fieldlines_3dv,
     )
 
 

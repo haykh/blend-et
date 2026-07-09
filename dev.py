@@ -12,7 +12,7 @@ SUBMODULES = (colormaps, tools, annotations, volume, fieldlines, pointcloud, lat
 
 def RegisterAll(include_dev=True):
     if include_dev:
-        bpy.utils.register_class(Dev_Panel_3DV)
+        bpy.utils.register_class(BLENDET_PT_dev_3dv)
         bpy.utils.register_class(DevReload)
 
     for m in SUBMODULES:
@@ -32,7 +32,7 @@ def UnregisterAll(include_dev=True):
         except Exception:
             pass
         try:
-            bpy.utils.unregister_class(Dev_Panel_3DV)
+            bpy.utils.unregister_class(BLENDET_PT_dev_3dv)
         except Exception:
             pass
 
@@ -71,7 +71,7 @@ def _reload_addon_packages():
     )
 
 
-class Dev_Panel_3DV(bpy.types.Panel):
+class BLENDET_PT_dev_3dv(bpy.types.Panel):
     bl_label = "Development"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"

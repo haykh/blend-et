@@ -4,11 +4,7 @@ from .utils import (
     On_material_colormap_change,
 )
 
-from ..colormaps.data import (  # pyright: ignore[reportMissingImports]
-    Enum_colormap_items,
-)
-
-from ..utilities.materials import (  # pyright: ignore[reportMissingImports]
+from ..utilities.materials import (
     CommonMaterial_Props,
 )
 

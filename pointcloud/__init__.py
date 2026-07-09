@@ -8,15 +8,15 @@ def classes():
         PointcloudMaterial_ReverseColormap,
         PointcloudMaterial_CreateOrReset,
     )
-    from .ui import PointcloudMaterial_Panel_NDE, Pointcloud_Panel_3DV
+    from .ui import BLENDET_PT_pointcloud_material_nde, BLENDET_PT_pointcloud_3dv
 
     return (
         Pointcloud_Props,
         Pointcloud_Create,
         PointcloudMaterial_CreateOrReset,
         PointcloudMaterial_ReverseColormap,
-        PointcloudMaterial_Panel_NDE,
-        Pointcloud_Panel_3DV,
+        BLENDET_PT_pointcloud_material_nde,
+        BLENDET_PT_pointcloud_3dv,
     )
 
 

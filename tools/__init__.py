@@ -9,7 +9,7 @@ def classes():
         Tools_SetBackground,
         Tools_ClearUnusedData,
     )
-    from .ui import Tools_Panel_3DV
+    from .ui import BLENDET_PT_tools_3dv
 
     return (
         Tools_Props,
@@ -17,7 +17,7 @@ def classes():
         Tools_FixColors,
         Tools_SetBackground,
         Tools_ClearUnusedData,
-        Tools_Panel_3DV,
+        BLENDET_PT_tools_3dv,
     )
 
 

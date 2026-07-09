@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "blend_et"
-version = "1.0.0"
+version = "1.1.0"
 name = "BlendET"
 tagline = "Blender Plugin which adds a collection of tools for scientific visualization"
 maintainer = "Hayk Hakobyan <haykh.astro@gmail.com>"
@@ -19,6 +19,6 @@ tags = [
   "User Interface",
 ]
 
-blender_version_min = "4.4.0"
+blender_version_min = "5.0.0"
 
 license = ["SPDX:GPL-3.0-or-later"]
