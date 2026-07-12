@@ -1,4 +1,4 @@
-![icon](docs/logo-lr.png)
+<img src="docs/logo-lr.png" width="256" />
 
 # Blend-ET
 
