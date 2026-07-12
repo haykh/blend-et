@@ -1,4 +1,4 @@
-![icon](docs/blend-et-icon.svg)
+![icon](docs/logo-lr.png)
 
 # Blend-ET
 
