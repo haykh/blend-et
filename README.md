@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="docs/blend-et-icon.svg" width="120" alt="BlendET app icon" />
+</p>
+
+---
+
 # Blend-ET
 
 Blend-ET is a plugin for the [Blender](https://www.blender.org/) 3D graphics software which introduces useful tools to streamline scientific data visualization. 
