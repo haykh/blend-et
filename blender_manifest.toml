@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "blend_et"
-version = "1.3.1"
+version = "1.3.2"
 name = "BlendET"
 tagline = "Blender Plugin for scientific visualization"
 maintainer = "Hayk Hakobyan <haykh.astro@gmail.com>"
