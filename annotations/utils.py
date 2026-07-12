@@ -88,7 +88,6 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -237,7 +236,6 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -378,7 +376,6 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -475,7 +472,6 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -556,7 +552,6 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -712,7 +707,6 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -902,7 +896,6 @@ def Axes_grid_geometry_node(
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -998,7 +991,6 @@ def Axes_grid_geometry_node(
                 {
                     "type_id": "NodeGroupOutput",
                     "label": "Group Output",
-                    "is_active_output": True,
                 }
             ],
         ],
@@ -1171,7 +1163,6 @@ def Arrow_geometry_node(mat: bpy.types.Material) -> bpy.types.NodeTree:
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -1319,7 +1310,6 @@ def Arrow_geometry_node(mat: bpy.types.Material) -> bpy.types.NodeTree:
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -1433,7 +1423,6 @@ def Arrow_geometry_node(mat: bpy.types.Material) -> bpy.types.NodeTree:
                 {
                     "type_id": "NodeGroupOutput",
                     "label": "Group Output",
-                    "is_active_output": True,
                 }
             ],
         ],
@@ -1579,7 +1568,6 @@ def Origin_axes_node(mat: bpy.types.Material | None = None) -> bpy.types.NodeTre
                     {
                         "type_id": "NodeGroupOutput",
                         "label": "Group Output",
-                        "is_active_output": True,
                     }
                 ],
             ],
@@ -1702,7 +1690,6 @@ def Origin_axes_node(mat: bpy.types.Material | None = None) -> bpy.types.NodeTre
                 {
                     "type_id": "NodeGroupOutput",
                     "label": "Group Output",
-                    "is_active_output": True,
                 }
             ],
         ],

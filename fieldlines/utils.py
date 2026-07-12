@@ -154,7 +154,6 @@ def Create_fieldline_geometry(
                 {
                     "type_id": "NodeGroupOutput",
                     "label": "Group Output",
-                    "is_active_output": True,
                 },
             ],
         ],
@@ -278,7 +277,6 @@ def Create_or_reset_fieldline_material(name: str):
                 {
                     "type_id": "ShaderNodeOutputMaterial",
                     "label": "Material Output",
-                    "is_active_output": True,
                 }
             ],
         ],

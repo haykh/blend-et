@@ -136,7 +136,7 @@ def Create_pointcloud_mesh(
                 {
                     "type_id": "GeometryNodePointsToVolume",
                     "label": "Points To Volume",
-                    "resolution_mode": "VOXEL_AMOUNT",
+                    "input_defaults": {"Resolution Mode": "Amount"},
                 },
                 {
                     "type_id": "GeometryNodeSetShadeSmooth",
@@ -166,7 +166,6 @@ def Create_pointcloud_mesh(
                 {
                     "type_id": "NodeGroupOutput",
                     "label": "Group Output",
-                    "is_active_output": True,
                 },
             ],
         ],
@@ -334,7 +333,6 @@ def Create_or_reset_pointcloud_volume_material(name: str):
                 {
                     "type_id": "ShaderNodeOutputMaterial",
                     "label": "Material Output",
-                    "is_active_output": True,
                 }
             ],
         ],
@@ -392,7 +390,6 @@ def Create_or_reset_pointcloud_mesh_material(name: str):
                 {
                     "type_id": "ShaderNodeOutputMaterial",
                     "label": "Material Output",
-                    "is_active_output": True,
                 }
             ],
         ],
