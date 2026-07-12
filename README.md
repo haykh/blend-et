@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="docs/blend-et-icon.png" width="120" alt="BlendET app icon" />
-</p>
-
----
+![icon](docs/blend-et-icon.svg)
 
 # Blend-ET
 
