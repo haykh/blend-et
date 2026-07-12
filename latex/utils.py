@@ -215,7 +215,9 @@ def Compile_with_latex(
 
             # Move mesh to scene collection and delete the temp.svg collection. Then rename mesh.
             temp_svg_collection = active_obj.users_collection[0]
-            bpy.ops.object.move_to_collection(collection_uid=0)
+            scene_collection = context.scene.collection
+            scene_collection.objects.link(active_obj)
+            temp_svg_collection.objects.unlink(active_obj)
             bpy.data.collections.remove(temp_svg_collection)
             active_obj.name = "LaTeX Figure"
 
@@ -230,8 +232,7 @@ def Compile_with_latex(
                     offset=0,
                 )
 
-                # Moves to scene collection, fixes name.
-                bpy.ops.object.move_to_collection(collection_uid=0)
+                # Conversion preserves the object's scene collection membership.
                 bpy.context.selected_objects[0].name = "LaTeX Figure"
                 if custom_material_bool:
                     bpy.context.selected_objects[0].material_slots[
