@@ -1,3 +1,5 @@
+_needs_reload = "bpy" in locals()
+
 import bpy
 
 
@@ -35,3 +37,13 @@ def unregister():
 
     for cls in reversed(classes()):
         bpy.utils.unregister_class(cls)
+
+
+if _needs_reload:
+    import importlib
+
+    from . import props, operators, ui
+
+    importlib.reload(props)
+    importlib.reload(operators)
+    importlib.reload(ui)
