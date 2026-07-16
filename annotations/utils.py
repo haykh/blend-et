@@ -441,7 +441,7 @@ def Axes_grid_geometry_node(
                         "data_type": "INT",
                         "mode": "ELEMENT",
                         "operation": "EQUAL",
-                        "input_defaults": {3: 0},
+                        "input_defaults": {"B": 0},
                     },
                     {
                         "type_id": "FunctionNodeCompare",
@@ -449,7 +449,7 @@ def Axes_grid_geometry_node(
                         "data_type": "INT",
                         "mode": "ELEMENT",
                         "operation": "EQUAL",
-                        "input_defaults": {3: 1},
+                        "input_defaults": {"B": 1},
                     },
                     {
                         "type_id": "ShaderNodeSeparateXYZ",

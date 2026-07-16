@@ -6,7 +6,7 @@ from ..colormaps.data import (
     Apply_stops_to_colorramp,
 )
 
-from ..utilities.nodes import CreateNodes
+from ..utilities.nodes import CreateNodes, set_modifier_input
 from ..utilities.materials import (
     CommonMaterialColormapChange,
 )
@@ -225,9 +225,10 @@ def Create_fieldline_geometry(
         node_tree=nt,
         clear=True,
     )
-    obj.modifiers["GeometryNodes"]["Socket_1"] = 8
-    obj.modifiers["GeometryNodes"]["Socket_2"] = 0.5
-    obj.modifiers["GeometryNodes"]["Socket_3"] = True
+    modifier = obj.modifiers["GeometryNodes"]
+    set_modifier_input(modifier, "Socket_1", 8)
+    set_modifier_input(modifier, "Socket_2", 0.5)
+    set_modifier_input(modifier, "Socket_3", True)
 
     return obj
 

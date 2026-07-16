@@ -6,7 +6,7 @@ from ..colormaps.data import (
     Apply_stops_to_colorramp,
 )
 
-from ..utilities.nodes import CreateNodes
+from ..utilities.nodes import CreateNodes, set_modifier_input
 from ..utilities.materials import (
     CommonMaterialColormapChange,
 )
@@ -20,6 +20,14 @@ def Create_pointcloud_mesh(
     uuid_str: str = "",
 ):
     suffix = f"_{uuid_str}" if uuid_str != "" else ""
+
+    def _set_amount_resolution(node):
+        # Blender >=5.0 exposes the resolution mode as a menu input socket,
+        # while 4.5 keeps it as the ``resolution_mode`` node property.
+        if "Resolution Mode" in node.inputs:
+            node.inputs["Resolution Mode"].default_value = "Amount"
+        else:
+            node.resolution_mode = "VOXEL_AMOUNT"
 
     bpy.ops.object.volume_add(align="WORLD")
     obj = context.active_object
@@ -136,7 +144,7 @@ def Create_pointcloud_mesh(
                 {
                     "type_id": "GeometryNodePointsToVolume",
                     "label": "Points To Volume",
-                    "input_defaults": {"Resolution Mode": "Amount"},
+                    "extra": _set_amount_resolution,
                 },
                 {
                     "type_id": "GeometryNodeSetShadeSmooth",
@@ -268,12 +276,13 @@ def Create_pointcloud_mesh(
         clear=True,
     )
 
-    obj.modifiers["GeometryNodes"]["Socket_1"] = 500
-    obj.modifiers["GeometryNodes"]["Socket_2"] = 0.02
-    obj.modifiers["GeometryNodes"]["Socket_3"] = False
-    obj.modifiers["GeometryNodes"]["Socket_4"] = 100
-    obj.modifiers["GeometryNodes"]["Socket_5"] = 1e-2
-    obj.modifiers["GeometryNodes"]["Socket_6"] = 2
+    modifier = obj.modifiers["GeometryNodes"]
+    set_modifier_input(modifier, "Socket_1", 500)
+    set_modifier_input(modifier, "Socket_2", 0.02)
+    set_modifier_input(modifier, "Socket_3", False)
+    set_modifier_input(modifier, "Socket_4", 100)
+    set_modifier_input(modifier, "Socket_5", 1e-2)
+    set_modifier_input(modifier, "Socket_6", 2)
 
     return obj
 

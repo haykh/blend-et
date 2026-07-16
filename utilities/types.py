@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Literal, TypeAlias
 
-type OperatorReturnItems = Literal[
+OperatorReturnItems: TypeAlias = Literal[
     "RUNNING_MODAL",  # Running Modal.Keep the operator running with blender.
     "CANCELLED",  # Cancelled.The operator exited without doing anything, so no undo entry should be pushed.
     "FINISHED",  # Finished.The operator exited after completing its action.

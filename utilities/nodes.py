@@ -2,6 +2,38 @@ from typing import Any
 import bpy
 
 
+def _input_socket(node: bpy.types.Node, key: str | int) -> bpy.types.NodeSocket:
+    """Resolve an input socket by index or name.
+
+    For multi-type nodes (Compare, Switch, ...) several input sockets can share
+    the same name while only the one matching the node's current type is enabled.
+    Blender <5.2 kept every typed socket in ``node.inputs`` (so a name lookup could
+    land on a disabled socket), whereas 5.2 exposes only the active pair. Preferring
+    the enabled socket keeps name-based defaults correct across both layouts.
+    """
+    if isinstance(key, str):
+        for socket in node.inputs:
+            if socket.name == key and socket.enabled:
+                return socket
+    return node.inputs[key]
+
+
+def set_modifier_input(
+    modifier: bpy.types.Modifier, socket_identifier: str, value: Any
+) -> None:
+    """Set a Geometry Nodes modifier input by interface socket identifier.
+
+    Blender <5.2 exposed modifier inputs as ID properties (``modifier[id] = value``).
+    Blender 5.2 dropped ID-property access on the Nodes modifier in favour of
+    ``modifier.properties.inputs[id]["value"]``.
+    """
+    properties = getattr(modifier, "properties", None)
+    if properties is not None:
+        properties.inputs[socket_identifier]["value"] = value
+    else:
+        modifier[socket_identifier] = value
+
+
 def CreateNodes(
     node_kwargs: list[list[dict[str, Any]]],
     socket_kwargs: list[dict[str, Any]],
@@ -66,10 +98,7 @@ def CreateNodes(
                 node_label,
                 (rolling_w, -rolling_h),
             )
-            if (node_input_defaults := row.pop("input_defaults", None)) is not None:
-                for input_name, default_value in node_input_defaults.items():
-                    new_node.inputs[input_name].default_value = default_value
-
+            node_input_defaults = row.pop("input_defaults", None)
             extra = row.pop("extra", None)
 
             for attr, value in row.items():
@@ -82,6 +111,15 @@ def CreateNodes(
 
             if extra is not None:
                 extra(new_node)
+
+            # Apply input defaults AFTER the type-defining attributes (data_type,
+            # input_type, ...) and any extra() callback. Blender 5.2 collapsed
+            # multi-type nodes (e.g. Compare, Switch) to a single dynamic socket
+            # pair whose layout only settles once the type attribute is set, so
+            # defaults must be addressed against the final layout.
+            if node_input_defaults is not None:
+                for input_name, default_value in node_input_defaults.items():
+                    _input_socket(new_node, input_name).default_value = default_value
 
             all_nodes[node_name] = new_node
 

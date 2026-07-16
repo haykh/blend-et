@@ -12,9 +12,15 @@ class PointcloudTests(BlenderIntegrationTest):
         self.assertIsNotNone(obj)
         nodes = self.geometry_node_group(obj).nodes
         self.assertIn("PointsToVolume", nodes)
-        self.assertEqual(
-            "Amount", nodes["PointsToVolume"].inputs["Resolution Mode"].default_value
-        )
+        points_to_volume = nodes["PointsToVolume"]
+        # Blender >=5.0 exposes the resolution mode as an input socket; 4.5 keeps
+        # it as the ``resolution_mode`` node property.
+        if "Resolution Mode" in points_to_volume.inputs:
+            self.assertEqual(
+                "Amount", points_to_volume.inputs["Resolution Mode"].default_value
+            )
+        else:
+            self.assertEqual("VOXEL_AMOUNT", points_to_volume.resolution_mode)
         self.assertEqual("pointcloud_volume", obj.active_material.get("category"))
 
     def test_npz_pointcloud(self):

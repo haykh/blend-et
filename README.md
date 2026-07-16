@@ -4,7 +4,7 @@
 
 Blend-ET is a plugin for the [Blender](https://www.blender.org/) 3D graphics software which introduces useful tools to streamline scientific data visualization. 
 
-> Note: the plugin has been tested primarily on Blender 5.1, if you have issues on older/newer versions -- please open an issue.
+> Note: the plugin is being primarily on LTS Blender versions (4.5 to 5.2), if you have issues on older/newer versions -- please open an issue.
 
 > There are example files that come with the repository, so feel free to download them and play around. To download the test datasets as well as the example `.blend`, please use `git lfs` (i.e., `git lfs fetch` from the root directory of the repository).
 
