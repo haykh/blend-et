@@ -219,3 +219,4 @@ __marimo__/
 testdata/
 scratch/
 BlendET_cache/
+dist/

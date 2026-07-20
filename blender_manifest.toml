@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "blend_et"
-version = "1.3.4"
+version = "1.3.5"
 name = "BlendET"
 tagline = "Tools to streamline scientific visualization"
 maintainer = "Hayk Hakobyan <haykh.astro@gmail.com>"
@@ -11,12 +11,7 @@ website = "https://github.com/haykh/blend-et/"
 
 tags = [
   "Add Mesh",
-  "Geometry Nodes",
   "Import-Export",
-  "Material",
-  "Mesh",
-  "Node",
-  "User Interface",
 ]
 
 blender_version_min = "4.5.0"
@@ -26,10 +21,6 @@ copyright = ["2024-2026 Hayk Hakobyan"]
 
 [permissions]
 files = "Import data (.vdb/.npy/.npz) and write .vdb / rendered LaTeX"
-
-# DISCLAIMER:
-# the add-on executes a subprocess to run LaTeX commands (latex/pdflatex/xelatex/dvisvgm)
-# to generate SVGs from LaTeX code, which are then imported into Blender as curves.
 
 [build]
 paths_exclude_pattern = [
